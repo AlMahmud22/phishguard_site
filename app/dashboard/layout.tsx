@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+
+/// loading component displayed while page content is being loaded
+function DashboardLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 /// Dashboard layout with sidebar navigation for nested routes
 /// wraps all /dashboard/* routes with consistent sidebar and header
@@ -172,7 +184,9 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
+          <Suspense fallback={<DashboardLoading />}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </div>

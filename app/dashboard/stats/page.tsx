@@ -2,9 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import StatsChart, { TopThreatsChart } from "@/components/StatsChart";
+import dynamic from "next/dynamic";
 import { fetchUserStats } from "@/lib/api";
 import type { UserStats, ApiResponse } from "@/types";
+
+/// dynamically import chart components with lazy loading for better performance
+/// these components use Recharts library which is heavy, so lazy loading improves initial page load
+const StatsChart = dynamic(() => import("@/components/StatsChart"), {
+  loading: () => (
+    <div className="card">
+      <div className="animate-pulse">
+        <div className="h-64 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  ),
+  ssr: false, /// disable SSR for chart components as they use client-side rendering
+});
+
+const TopThreatsChart = dynamic(
+  () =>
+    import("@/components/StatsChart").then((mod) => ({
+      default: mod.TopThreatsChart,
+    })),
+  {
+    loading: () => (
+      <div className="card">
+        <div className="animate-pulse">
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 /// Statistics page displays visual analytics using Recharts
 /// fetches data from GET /api/user/stats endpoint

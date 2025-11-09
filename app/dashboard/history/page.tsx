@@ -2,9 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import HistoryTable from "@/components/HistoryTable";
+import dynamic from "next/dynamic";
 import { fetchScanHistory } from "@/lib/api";
 import type { ScanHistory, ApiResponse } from "@/types";
+
+/// dynamically import HistoryTable component with lazy loading for better performance
+/// shows loading state while component code is being fetched
+const HistoryTable = dynamic(() => import("@/components/HistoryTable"), {
+  loading: () => (
+    <div className="card">
+      <div className="animate-pulse space-y-4">
+        <div className="h-12 bg-gray-200 rounded"></div>
+        <div className="h-32 bg-gray-200 rounded"></div>
+        <div className="h-32 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  ),
+  ssr: false, /// disable SSR for this component as it uses client-side data
+});
 
 /// History page displays all user scan records from backend
 /// fetches data from GET /api/url/history endpoint
