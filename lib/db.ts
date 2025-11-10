@@ -16,7 +16,10 @@ if (!cached) {
 // connect to mongodb with pooling and auto reconnect
 async function connectToDatabase(): Promise<typeof mongoose> {
   if (cached.conn) {
-    console.log("✅ Using cached MongoDB connection");
+    // Only show this in verbose mode to avoid spam
+    if (process.env.VERBOSE_LOGS === 'true') {
+      console.log("✅ Using cached MongoDB connection");
+    }
     return cached.conn;
   }
 
@@ -37,16 +40,32 @@ async function connectToDatabase(): Promise<typeof mongoose> {
       family: 4,
     };
 
-    console.log("🔄 Connecting to MongoDB...");
+    // Parse MongoDB URI to show sanitized connection info
+    let connectionInfo = 'MongoDB';
+    try {
+      const url = new URL(process.env.MONGODB_URI);
+      const host = url.hostname;
+      const isAtlas = host.includes('mongodb.net');
+      const dbName = url.pathname.split('/')[1]?.split('?')[0] || 'default';
+      connectionInfo = isAtlas 
+        ? `MongoDB Atlas (DB: ${dbName})`
+        : `${host} (DB: ${dbName})`;
+    } catch {
+      // Fallback if URI parsing fails
+    }
+
+    console.log(`🔄 Connecting to ${connectionInfo}...`);
     
     cached.promise = mongoose
       .connect(process.env.MONGODB_URI, opts)
       .then((mongoose) => {
-        console.log("✅ MongoDB connected successfully");
+        console.log(`✅ Successfully connected to ${connectionInfo}`);
+        console.log(`   Connection pool: ${opts.minPoolSize}-${opts.maxPoolSize} connections`);
         return mongoose;
       })
       .catch((error) => {
-        console.error("❌ MongoDB connection error:", error);
+        console.error(`❌ Failed to connect to ${connectionInfo}`);
+        console.error("   Error:", error.message);
         cached.promise = null;
         throw error;
       });

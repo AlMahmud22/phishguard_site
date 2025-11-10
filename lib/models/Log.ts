@@ -21,7 +21,6 @@ const LogSchema = new Schema<ILog>(
       type: Date,
       default: Date.now,
       required: true,
-      index: true,
     },
     level: {
       type: String,

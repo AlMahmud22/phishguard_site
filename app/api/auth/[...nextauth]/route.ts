@@ -83,20 +83,20 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google" || account?.provider === "github") {
         await connectToDatabase();
 
-        const existingUser = await User.findOne({
-          provider: account.provider,
-          providerId: account.providerAccountId,
-        });
-
-        if (!existingUser) {
-          await User.create({
+        await User.findOneAndUpdate(
+          {
+            provider: account.provider,
+            providerId: account.providerAccountId,
+          },
+          {
             name: user.name,
             email: user.email,
             provider: account.provider,
             providerId: account.providerAccountId,
             role: "user",
-          });
-        }
+          },
+          { upsert: true, new: true }
+        );
       }
 
       return true;
