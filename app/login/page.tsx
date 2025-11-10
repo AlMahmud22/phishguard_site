@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
@@ -15,12 +15,15 @@ export default function LoginPage() {
   });
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const hasRedirected = useRef(false);
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/dashboard");
-    }
-  }, [status, router]);
+  /// redirect to dashboard if already authenticated
+  /// use ref to prevent redirect loop
+  if (status === "authenticated" && !hasRedirected.current) {
+    hasRedirected.current = true;
+    router.replace("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

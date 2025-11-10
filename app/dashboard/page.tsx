@@ -1,64 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import api from "@/lib/api";
-import type { User, AnalyticsData } from "@/types";
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import type { AnalyticsData } from "@/types";
 
 /// Dashboard page - main user interface after authentication
 /// displays scan history, analytics, and user information
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  /// check authentication and fetch user data on mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("authToken");
-
-      /// redirect to login if no token found
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      try {
-        /// fetch user profile data
-        const userResponse = await api.get<{ success: boolean; data: User }>(
-          "/user/profile"
-        );
-        
-        if (userResponse.data.success) {
-          setUser(userResponse.data.data);
-        }
-
-        /// fetch analytics data
-        const analyticsResponse = await api.get<{
-          success: boolean;
-          data: AnalyticsData;
-        }>("/analytics/dashboard");
-        
-        if (analyticsResponse.data.success) {
-          setAnalytics(analyticsResponse.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-        /// if authentication fails, redirect to login
-        router.push("/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [router]);
+  const { data: session, status } = useSession();
+  const [analytics] = useState<AnalyticsData | null>(null);
+  const isLoading = status === "loading";
 
   /// handle user logout
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    router.push("/");
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" });
   };
 
   if (isLoading) {
@@ -80,7 +35,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600 mt-1">
-              Welcome back, {user?.name || "User"}!
+              Welcome back, {session?.user?.name || "User"}!
             </p>
           </div>
           <button onClick={handleLogout} className="btn-secondary">
@@ -206,19 +161,15 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Name:</span>
-              <span className="font-medium">{user?.name || "N/A"}</span>
+              <span className="font-medium">{session?.user?.name || "N/A"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Email:</span>
-              <span className="font-medium">{user?.email || "N/A"}</span>
+              <span className="font-medium">{session?.user?.email || "N/A"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Member Since:</span>
-              <span className="font-medium">
-                {user?.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString()
-                  : "N/A"}
-              </span>
+              <span className="text-gray-600">Role:</span>
+              <span className="font-medium capitalize">{session?.user?.role || "N/A"}</span>
             </div>
           </div>
         </div>

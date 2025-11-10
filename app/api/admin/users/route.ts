@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth";
 import { hasAnyRole } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import User from "@/lib/models/User";
+import { checkRateLimit } from "@/lib/rateLimit";
 import type { AdminUser, AdminUsersResponse } from "@/types";
 
 /// GET /api/admin/users - Fetch all users with pagination and filtering
@@ -24,6 +25,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden: Requires admin or tester role" },
         { status: 403 }
+      );
+    }
+
+    /// rate limit check - 100 requests per hour per user
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/users",
+      limit: 100,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
       );
     }
 
@@ -127,6 +146,24 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden: Requires admin role" },
         { status: 403 }
+      );
+    }
+
+    /// rate limit check - 50 updates per hour per admin
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/users:update",
+      limit: 50,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
       );
     }
 

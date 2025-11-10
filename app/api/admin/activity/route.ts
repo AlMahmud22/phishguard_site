@@ -4,6 +4,7 @@ import { hasAnyRole } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import Log from "@/lib/models/Log";
 import User from "@/lib/models/User";
+import { checkRateLimit } from "@/lib/rateLimit";
 import type { ActivityData } from "@/types";
 
 // GET /api/admin/activity - fetch realtime activity metrics
@@ -25,6 +26,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden: Requires admin or tester role" },
         { status: 403 }
+      );
+    }
+
+    // rate limit check - 120 requests per hour per user (higher for dashboard)
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/activity",
+      limit: 120,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
       );
     }
 

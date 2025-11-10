@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/lib/models/User";
 import { logInfo, logError, logWarning, getClientIp, getUserAgent } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
   const ipAddress = getClientIp(request.headers);
@@ -10,6 +11,30 @@ export async function POST(request: Request) {
 
   try {
     const { name, email, password } = await request.json();
+
+    // rate limit check - 5 registration attempts per hour per IP
+    const rateLimitKey = `register:${ipAddress}`;
+    const rateLimit = await checkRateLimit(rateLimitKey, {
+      endpoint: "/api/register",
+      limit: 5,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      await logWarning(
+        "Registration Rate Limit",
+        "Too many registration attempts",
+        { ipAddress, userAgent, metadata: { resetAt: rateLimit.resetAt } }
+      );
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: `Too many registration attempts. Please try again at ${rateLimit.resetAt.toLocaleTimeString()}`,
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
+      );
+    }
 
     if (!name || !email || !password) {
       await logWarning(

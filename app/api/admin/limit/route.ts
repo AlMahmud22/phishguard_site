@@ -4,6 +4,7 @@ import { hasAnyRole } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import RateLimit from "@/lib/models/RateLimit";
 import User from "@/lib/models/User";
+import { checkRateLimit } from "@/lib/rateLimit";
 import type { RateLimitOverview, RateLimitData } from "@/types";
 
 // GET /api/admin/limit - fetch rate limit stats
@@ -25,6 +26,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden: Requires admin or tester role" },
         { status: 403 }
+      );
+    }
+
+    // rate limit check - 100 requests per hour per user
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/limit",
+      limit: 100,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
       );
     }
 
@@ -165,6 +184,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // rate limit check - 20 config updates per hour per admin
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/limit:config",
+      limit: 20,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { globalLimit, perUserLimit, windowMinutes } = body;
 
@@ -236,6 +273,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden: Requires admin role" },
         { status: 403 }
+      );
+    }
+
+    // rate limit check - 30 resets per hour per admin
+    const rateLimit = await checkRateLimit(session.user.id, {
+      endpoint: "/api/admin/limit:reset",
+      limit: 30,
+      windowMs: 3600000, // 1 hour
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Try again later.",
+          resetAt: rateLimit.resetAt.toISOString(),
+        },
+        { status: 429 }
       );
     }
 
