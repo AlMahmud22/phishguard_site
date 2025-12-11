@@ -13,15 +13,12 @@ function AuthSuccessContentInner() {
   const handleOpenDesktop = () => {
     if (!code) return;
     setClicked(true);
-    const url = `phishguard://auth?code=${code}`;
     
-    // Try to open the desktop app
-    window.location.href = url;
+    // Open localhost callback - this is much more reliable than custom protocols
+    const localCallbackUrl = `http://localhost:3456/auth/callback?code=${code}`;
     
-    // Also try with timeout in case first attempt fails
-    setTimeout(() => {
-      window.location.href = url;
-    }, 100);
+    console.log('[Success] Opening desktop app via localhost:', localCallbackUrl);
+    window.location.href = localCallbackUrl;
   };
 
   if (!code) {
