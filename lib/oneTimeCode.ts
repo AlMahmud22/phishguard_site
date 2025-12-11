@@ -12,7 +12,7 @@ import OneTimeCode from "./models/OneTimeCode";
  * Configuration
  */
 const CODE_LENGTH = 32; // Length of the code in bytes (64 hex characters)
-const CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const CODE_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes (increased for manual code entry)
 
 /**
  * Generate a cryptographically secure one-time code
