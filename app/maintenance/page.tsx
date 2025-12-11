@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 /// maintenance mode page displayed during scheduled downtime or system updates
