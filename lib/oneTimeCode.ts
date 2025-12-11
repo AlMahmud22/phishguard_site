@@ -26,28 +26,38 @@ export async function generateOneTimeCode(
   email: string,
   role: string
 ): Promise<string> {
-  await dbConnect();
+  try {
+    console.log(`[OneTimeCode] Connecting to database...`);
+    await dbConnect();
+    console.log(`[OneTimeCode] Database connected`);
 
-  // Generate random code
-  const code = randomBytes(CODE_LENGTH).toString("hex");
+    // Generate random code
+    const code = randomBytes(CODE_LENGTH).toString("hex");
+    console.log(`[OneTimeCode] Generated code: ${code.substring(0, 8)}...`);
 
-  // Store code in database
-  const now = Date.now();
-  const expiresAt = new Date(now + CODE_EXPIRY_MS);
+    // Store code in database
+    const now = Date.now();
+    const expiresAt = new Date(now + CODE_EXPIRY_MS);
 
-  await OneTimeCode.create({
-    code,
-    userId,
-    email,
-    role,
-    createdAt: new Date(now),
-    expiresAt,
-    consumed: false,
-  });
+    console.log(`[OneTimeCode] Saving code to database for user ${email}`);
+    const savedCode = await OneTimeCode.create({
+      code,
+      userId,
+      email,
+      role,
+      createdAt: new Date(now),
+      expiresAt,
+      consumed: false,
+    });
 
-  console.log(`[OneTimeCode] Generated code for user ${email}, expires in ${CODE_EXPIRY_MS / 1000}s`);
+    console.log(`[OneTimeCode] Code saved successfully with ID: ${savedCode._id}`);
+    console.log(`[OneTimeCode] Generated code for user ${email}, expires in ${CODE_EXPIRY_MS / 1000}s`);
 
-  return code;
+    return code;
+  } catch (error) {
+    console.error(`[OneTimeCode] Error generating code:`, error);
+    throw error;
+  }
 }
 
 /**
