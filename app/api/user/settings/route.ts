@@ -1,43 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAuth } from "@/lib/authMiddleware";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
 import Log from "@/lib/models/Log";
+import { createSuccessResponse, ErrorResponses } from "@/lib/apiResponse";
 
 /**
  * GET /api/user/settings
  * Get user settings/preferences
+ * Supports both NextAuth sessions and JWT tokens
  */
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to view settings",
-        },
-        { status: 401 }
-      );
-    }
-
+    // Check authentication (supports JWT and NextAuth)
+    const authUser = await requireAuth(req);
     await dbConnect();
 
     // Get user with settings
-    const user = await User.findOne({ email: session.user.email }).lean();
+    const user = await User.findById(authUser.id).lean();
 
     if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-          message: "User account not found",
-        },
-        { status: 404 }
-      );
+      return ErrorResponses.notFound("User not found");
     }
 
     // Return settings with defaults if not set
@@ -62,26 +45,17 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    return NextResponse.json(
+    return createSuccessResponse(
       {
-        success: true,
-        data: {
-          settings,
-          isPremium: user.isPremium || false,
-        },
-        message: "Settings retrieved successfully",
+        settings,
+        isPremium: user.isPremium || false,
       },
-      { status: 200 }
+      "Settings retrieved successfully"
     );
   } catch (error: any) {
     console.error("Get settings error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-        message: "An error occurred while retrieving settings",
-      },
-      { status: 500 }
+    return ErrorResponses.internalError(
+      "An error occurred while retrieving settings"
     );
   }
 }
@@ -89,36 +63,19 @@ export async function GET(req: NextRequest) {
 /**
  * PUT /api/user/settings
  * Update user settings/preferences
+ * Supports both NextAuth sessions and JWT tokens
  */
 export async function PUT(req: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to update settings",
-        },
-        { status: 401 }
-      );
-    }
-
+    // Check authentication (supports JWT and NextAuth)
+    const authUser = await requireAuth(req);
     await dbConnect();
 
     // Get user
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(authUser.id);
 
     if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-          message: "User account not found",
-        },
-        { status: 404 }
-      );
+      return ErrorResponses.notFound("User not found");
     }
 
     // Parse request body
@@ -126,14 +83,7 @@ export async function PUT(req: NextRequest) {
     const { settings } = body;
 
     if (!settings || typeof settings !== "object") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid request",
-          message: "Settings object is required",
-        },
-        { status: 400 }
-      );
+      return ErrorResponses.invalidRequest("Settings object is required");
     }
 
     // Validate and merge settings
@@ -158,13 +108,8 @@ export async function PUT(req: NextRequest) {
         (settings.scanning.confidenceThreshold < 0 ||
           settings.scanning.confidenceThreshold > 1)
       ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Invalid request",
-            message: "confidenceThreshold must be between 0 and 1",
-          },
-          { status: 400 }
+        return ErrorResponses.invalidRequest(
+          "confidenceThreshold must be between 0 and 1"
         );
       }
     }
@@ -198,25 +143,16 @@ export async function PUT(req: NextRequest) {
       timestamp: new Date(),
     });
 
-    return NextResponse.json(
+    return createSuccessResponse(
       {
-        success: true,
-        data: {
-          settings: updatedSettings,
-        },
-        message: "Settings updated successfully",
+        settings: updatedSettings,
       },
-      { status: 200 }
+      "Settings updated successfully"
     );
   } catch (error: any) {
     console.error("Update settings error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-        message: "An error occurred while updating settings",
-      },
-      { status: 500 }
+    return ErrorResponses.internalError(
+      "An error occurred while updating settings"
     );
   }
 }

@@ -1,43 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAuth } from "@/lib/authMiddleware";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
 import Scan from "@/lib/models/Scan";
+import { createSuccessResponse, ErrorResponses } from "@/lib/apiResponse";
 
 /**
  * GET /api/user/stats
  * Get user scanning statistics and analytics
+ * Supports both NextAuth sessions and JWT tokens
  */
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to view statistics",
-        },
-        { status: 401 }
-      );
-    }
-
+    // Check authentication (supports JWT and NextAuth)
+    const authUser = await requireAuth(req);
     await dbConnect();
 
     // Get user
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(authUser.id);
 
     if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-          message: "User account not found",
-        },
-        { status: 404 }
-      );
+      return ErrorResponses.notFound("User not found");
     }
 
     // Get period parameter
@@ -212,70 +195,61 @@ export async function GET(req: NextRequest) {
     }
 
     // Return statistics
-    return NextResponse.json(
+    return createSuccessResponse(
       {
-        success: true,
-        data: {
-          overview: {
-            totalScans,
-            safeCount,
-            warningCount,
-            dangerCount,
-            averageScore,
-            threatsDetected,
-            threatsBlocked,
-          },
-          activity: {
-            today: todayScans,
-            thisWeek: weekScans,
-            thisMonth: monthScans,
-            streak,
-          },
-          limits: {
-            hourly: {
-              limit: limits.hourly,
-              used: hourlyUsage,
-              remaining: limits.hourly - hourlyUsage,
-            },
-            daily: {
-              limit: limits.daily,
-              used: dailyUsage,
-              remaining: limits.daily - dailyUsage,
-            },
-            monthly: {
-              limit: limits.monthly,
-              used: monthlyUsage,
-              remaining: limits.monthly - monthlyUsage,
-            },
-          },
-          topDomains,
-          recentDangers: recentDangers.map((scan) => ({
-            scanId: scan.scanId,
-            url: scan.url,
-            status: scan.status,
-            score: scan.score,
-            timestamp: scan.timestamp,
-            factors: scan.factors,
-          })),
-          activityByDay,
-          accountInfo: {
-            isPremium: user.isPremium,
-            memberSince: user.createdAt,
-          },
-        },
-        message: "Statistics retrieved successfully",
+        overview: {
+        totalScans,
+        safeCount,
+        warningCount,
+        dangerCount,
+        averageScore,
+        threatsDetected,
+        threatsBlocked,
       },
-      { status: 200 }
+      activity: {
+        today: todayScans,
+        thisWeek: weekScans,
+        thisMonth: monthScans,
+        streak,
+      },
+      limits: {
+        hourly: {
+          limit: limits.hourly,
+          used: hourlyUsage,
+          remaining: limits.hourly - hourlyUsage,
+        },
+        daily: {
+          limit: limits.daily,
+          used: dailyUsage,
+          remaining: limits.daily - dailyUsage,
+        },
+        monthly: {
+          limit: limits.monthly,
+          used: monthlyUsage,
+          remaining: limits.monthly - monthlyUsage,
+        },
+      },
+      topDomains,
+      recentDangers: recentDangers.map((scan) => ({
+        scanId: scan.scanId,
+        url: scan.url,
+        status: scan.status,
+        score: scan.score,
+        timestamp: scan.timestamp,
+        factors: scan.factors,
+      })),
+      activityByDay,
+      accountInfo: {
+        isPremium: user.isPremium,
+        memberSince: user.createdAt,
+      },
+    },
+    "Statistics retrieved successfully"
     );
   } catch (error: any) {
     console.error("Get user stats error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-        message: "An error occurred while retrieving statistics",
-      },
-      { status: 500 }
+    return ErrorResponses.internalError(
+      "An error occurred while retrieving statistics"
     );
   }
 }
