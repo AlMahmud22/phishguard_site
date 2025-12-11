@@ -8,33 +8,20 @@ function AuthSuccessContentInner() {
   const code = searchParams.get("code");
   const [countdown, setCountdown] = useState(3);
 
-  useEffect(() => {
+  const [clicked, setClicked] = useState(false);
+
+  const handleOpenDesktop = () => {
     if (!code) return;
-
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleRedirect();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [code]);
-
-  const handleRedirect = () => {
-    if (!code) return;
+    setClicked(true);
     const url = `phishguard://auth?code=${code}`;
+    
+    // Try to open the desktop app
     window.location.href = url;
-  };
-
-  const manualClick = () => {
-    if (!code) return;
-    const url = `phishguard://auth?code=${code}`;
-    window.location.href = url;
+    
+    // Also try with timeout in case first attempt fails
+    setTimeout(() => {
+      window.location.href = url;
+    }, 100);
   };
 
   if (!code) {
@@ -68,23 +55,25 @@ function AuthSuccessContentInner() {
           </p>
         </div>
 
-        {countdown > 0 ? (
-          <div className="text-center mb-6">
-            <p className="text-sm text-gray-600 mb-4">
-              Redirecting to desktop app in {countdown}...
-            </p>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          </div>
-        ) : (
-          <div className="text-center space-y-4 mb-6">
-            <button
-              onClick={manualClick}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-            >
-              Open PhishGuard Desktop
-            </button>
-          </div>
-        )}
+        <div className="text-center space-y-4 mb-6">
+          <button
+            onClick={handleOpenDesktop}
+            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-3"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Open PhishGuard Desktop
+          </button>
+          
+          {clicked && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-3">
+              <p className="text-sm text-green-700">
+                ✓ Opening desktop app... If nothing happens, try clicking the button again.
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="border-t pt-4">
           <p className="text-sm text-gray-700 font-medium mb-2">
