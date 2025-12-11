@@ -68,15 +68,27 @@ export function validateAndConsumeCode(code: string): {
   email: string;
   role: string;
 } | null {
+  console.log(`[OneTimeCode] Validating code: ${code.substring(0, 8)}... (length: ${code.length})`);
+  console.log(`[OneTimeCode] Store size: ${codeStore.size} codes`);
+  
   const data = codeStore.get(code);
 
   if (!data) {
-    console.log(`[OneTimeCode] Code not found: ${code.substring(0, 8)}...`);
+    console.log(`[OneTimeCode] Code not found in store`);
+    console.log(`[OneTimeCode] Available codes: ${Array.from(codeStore.keys()).map(k => k.substring(0, 8)).join(', ')}`);
     return null;
   }
 
+  const now = Date.now();
+  const ageSeconds = Math.floor((now - data.createdAt) / 1000);
+  const expiresInSeconds = Math.floor((data.expiresAt - now) / 1000);
+
+  console.log(`[OneTimeCode] Code found for user ${data.email}`);
+  console.log(`[OneTimeCode] Code age: ${ageSeconds}s, expires in: ${expiresInSeconds}s`);
+  console.log(`[OneTimeCode] Code consumed: ${data.consumed}`);
+
   // Check if expired
-  if (Date.now() > data.expiresAt) {
+  if (now > data.expiresAt) {
     console.log(`[OneTimeCode] Code expired for user ${data.email}`);
     codeStore.delete(code);
     return null;
@@ -97,7 +109,7 @@ export function validateAndConsumeCode(code: string): {
     codeStore.delete(code);
   }, 1000);
 
-  console.log(`[OneTimeCode] Code validated and consumed for user ${data.email}`);
+  console.log(`[OneTimeCode] Code validated and consumed successfully for user ${data.email}`);
 
   return {
     userId: data.userId,

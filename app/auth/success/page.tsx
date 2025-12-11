@@ -93,10 +93,16 @@ function AuthSuccessContentInner() {
           <p className="text-xs text-gray-600 mb-3">
             Copy this authentication code and paste it in the desktop app:
           </p>
-          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+          <div className="bg-gray-50 p-3 rounded-md border border-gray-200 mb-3">
             <code className="text-xs font-mono break-all text-gray-800 select-all">
               {code}
             </code>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md border border-amber-200">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
+            <span>Code expires in 5 minutes. Use it immediately.</span>
           </div>
           <p className="text-xs text-gray-500 mt-2">
             Click "Enter code manually" in the desktop app login screen
