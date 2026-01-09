@@ -3,6 +3,13 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export type UserRole = "user" | "tester" | "admin";
 export type AuthProvider = "credentials" | "google" | "github";
 
+export interface IMonitoredApp {
+  id: string;
+  name: string;
+  enabled: boolean;
+  category: string;
+}
+
 export interface IUserSettings {
   notifications: {
     email: boolean;
@@ -22,6 +29,10 @@ export interface IUserSettings {
     shareAnonymousData: boolean;
     improveModel: boolean;
   };
+  monitoredApps?: {
+    universalMonitoring: boolean;
+    applications: IMonitoredApp[];
+  };
 }
 
 export interface IUser extends Document {
@@ -36,6 +47,13 @@ export interface IUser extends Document {
   verificationTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  desktopAppKeys?: Array<{
+    key: string;
+    name: string;
+    createdAt: Date;
+    lastUsed?: Date;
+    isActive: boolean;
+  }>;
   linkedAccounts: {
     provider: AuthProvider;
     providerId: string;
@@ -109,6 +127,27 @@ const UserSchema = new Schema<IUser>(
     resetPasswordExpires: {
       type: Date,
     },
+    desktopAppKeys: [{
+      key: {
+        type: String,
+        required: true,
+      },
+      name: {
+        type: String,
+        required: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      lastUsed: {
+        type: Date,
+      },
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
+    }],
     linkedAccounts: [{
       provider: {
         type: String,
@@ -134,6 +173,15 @@ const UserSchema = new Schema<IUser>(
       privacy: {
         shareAnonymousData: { type: Boolean, default: true },
         improveModel: { type: Boolean, default: true },
+      },
+      monitoredApps: {
+        universalMonitoring: { type: Boolean, default: false },
+        applications: [{
+          id: { type: String, required: true },
+          name: { type: String, required: true },
+          enabled: { type: Boolean, default: false },
+          category: { type: String, required: true },
+        }],
       },
     },
     scanQuota: {

@@ -149,6 +149,70 @@ function checkNextAuth(): ServiceStatus {
 }
 
 /**
+ * Check External API Keys (for URL scanning engines)
+ */
+function checkExternalApiKeys(): ServiceStatus {
+  const keys = {
+    google: process.env.GOOGLE_SAFE_BROWSING_API_KEY,
+    phishtank: process.env.PHISHTANK_API_KEY,
+    virustotal: process.env.VIRUSTOTAL_API_KEY,
+    urlscan: process.env.URLSCAN_API_KEY
+  };
+  
+  const configured = Object.entries(keys).filter(([_, value]) => value && value !== `YOUR_${_.toUpperCase()}_KEY_HERE`);
+  const total = Object.keys(keys).length;
+  
+  if (configured.length === 0) {
+    return {
+      name: 'External API Keys',
+      status: 'WARNING',
+      message: 'No API keys configured (using Engine 1 only)'
+    };
+  }
+  
+  if (configured.length < total) {
+    return {
+      name: 'External API Keys',
+      status: 'WARNING',
+      message: `${configured.length}/${total} configured (${configured.map(([k]) => k).join(', ')})`
+    };
+  }
+  
+  return {
+    name: 'External API Keys',
+    status: 'OK',
+    message: `All ${total} engines configured`
+  };
+}
+
+/**
+ * Check Email/SMTP configuration
+ */
+function checkEmailService(): ServiceStatus {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPassword = process.env.EMAIL_PASSWORD;
+  
+  if (!emailUser || !emailPassword) {
+    return {
+      name: 'Email Service',
+      status: 'WARNING',
+      message: 'Not configured (email features disabled)'
+    };
+  }
+  
+  const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const maskedUser = emailUser.length > 10 
+    ? `${emailUser.substring(0, 5)}...@${emailUser.split('@')[1] || 'unknown'}`
+    : emailUser;
+  
+  return {
+    name: 'Email Service',
+    status: 'OK',
+    message: `Configured (${host}, ${maskedUser})`
+  };
+}
+
+/**
  * Get status icon based on status
  */
 function getStatusIcon(status: 'OK' | 'ERROR' | 'WARNING'): string {
@@ -185,9 +249,15 @@ export function runStartupChecks() {
     checkMongoDB(),
     checkNextAuth(),
     
+    // Email service (important for production)
+    checkEmailService(),
+    
     // OAuth providers (optional but recommended)
     checkGoogleAuth(),
     checkGitHubAuth(),
+    
+    // External API keys for scanning
+    checkExternalApiKeys(),
   ];
   
   // Print all statuses

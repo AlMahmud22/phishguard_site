@@ -48,6 +48,7 @@ export interface ScanResult {
       databases: string[];
       lastReported?: Date;
       reportCount: number;
+      engineDetails?: any;
     };
   };
   factors: string[];
@@ -290,8 +291,13 @@ export async function analyzeContent(url: URL): Promise<{
   });
 }
 
+// Helper function to sleep
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
- * Check against threat databases
+ * Enhanced threat database checking with detailed results
  */
 export async function checkThreatDatabases(
   url: string
@@ -299,11 +305,13 @@ export async function checkThreatDatabases(
   databases: string[];
   lastReported?: Date;
   reportCount: number;
+  engineDetails?: any;
 }> {
   const databases: string[] = [];
   let reportCount = 0;
+  const engineDetails: any = {};
 
-  // Google Safe Browsing API
+  // ENGINE 2: Google Safe Browsing API
   if (process.env.GOOGLE_SAFE_BROWSING_API_KEY) {
     try {
       const response = await fetch(
@@ -313,7 +321,7 @@ export async function checkThreatDatabases(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             client: {
-              clientId: "phishguard",
+              clientId: "phishguard-backend",
               clientVersion: "1.0.0",
             },
             threatInfo: {
@@ -328,43 +336,88 @@ export async function checkThreatDatabases(
               threatEntries: [{ url }],
             },
           }),
+          signal: AbortSignal.timeout(5000),
         }
       );
 
-      const data = await response.json();
-      if (data.matches && data.matches.length > 0) {
-        databases.push("Google Safe Browsing");
-        reportCount += data.matches.length;
+      if (response.ok) {
+        const data = await response.json();
+        engineDetails.googleSafeBrowsing = {
+          status: data.matches && data.matches.length > 0 ? "THREAT_DETECTED" : "CLEAN",
+          matches: data.matches || [],
+          threatCount: data.matches?.length || 0,
+        };
+        
+        if (data.matches && data.matches.length > 0) {
+          databases.push("Google Safe Browsing");
+          reportCount += data.matches.length;
+          console.log(`[ENGINE 2] Google detected: ${data.matches.length} threats`);
+        } else {
+          console.log("[ENGINE 2] Google: URL is clean");
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(`[ENGINE 2] Google API returned ${response.status}: ${errorText}`);
+        engineDetails.googleSafeBrowsing = { status: "ERROR", error: errorText };
       }
-    } catch (error) {
-      console.error("Google Safe Browsing check failed:", error);
+    } catch (error: any) {
+      console.error("[ENGINE 2] Google Safe Browsing check failed:", error);
+      engineDetails.googleSafeBrowsing = { status: "ERROR", error: error.message };
     }
+  } else {
+    console.warn("[ENGINE 2] Google Safe Browsing API key not configured");
+    engineDetails.googleSafeBrowsing = { status: "NOT_CONFIGURED" };
   }
 
-  // PhishTank API
-  try {
-    const encodedUrl = encodeURIComponent(url);
-    const response = await fetch(
-      `https://checkurl.phishtank.com/checkurl/`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `url=${encodedUrl}&format=json&app_key=${process.env.PHISHTANK_API_KEY || ""}`,
-      }
-    );
+  // ENGINE 3: PhishTank API
+  if (process.env.PHISHTANK_API_KEY && process.env.PHISHTANK_API_KEY !== "YOUR_PHISHTANK_KEY_HERE") {
+    try {
+      const encodedUrl = encodeURIComponent(url);
+      const response = await fetch(
+        `https://checkurl.phishtank.com/checkurl/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `url=${encodedUrl}&format=json&app_key=${process.env.PHISHTANK_API_KEY}`,
+          signal: AbortSignal.timeout(5000),
+        }
+      );
 
-    const data = await response.json();
-    if (data.results && data.results.in_database && data.results.valid) {
-      databases.push("PhishTank");
-      reportCount++;
+      if (response.ok) {
+        const data = await response.json();
+        engineDetails.phishTank = {
+          status: data.results?.in_database && data.results?.valid ? "PHISHING_DETECTED" : "CLEAN",
+          inDatabase: data.results?.in_database || false,
+          verified: data.results?.valid || false,
+          phishId: data.results?.phish_id || null,
+          phishDetailUrl: data.results?.phish_detail_page || null,
+        };
+        
+        if (data.results && data.results.in_database && data.results.valid) {
+          databases.push("PhishTank");
+          reportCount++;
+          console.log("[ENGINE 3] PhishTank detected: URL is in phishing database");
+        } else {
+          console.log("[ENGINE 3] PhishTank: URL not in database");
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(`[ENGINE 3] PhishTank API returned ${response.status}: ${errorText}`);
+        engineDetails.phishTank = { status: "ERROR", error: errorText };
+      }
+    } catch (error: any) {
+      console.error("[ENGINE 3] PhishTank check failed:", error);
+      engineDetails.phishTank = { status: "ERROR", error: error.message };
     }
-  } catch (error) {
-    console.error("PhishTank check failed:", error);
+  } else {
+    console.warn("[ENGINE 3] PhishTank API key not configured");
+    engineDetails.phishTank = { status: "NOT_CONFIGURED" };
   }
 
-  // VirusTotal API (if configured)
+  // ENGINE 4: VirusTotal API (Enhanced with detailed data extraction)
   if (process.env.VIRUSTOTAL_API_KEY) {
     try {
+      // VirusTotal uses base64-encoded URL without padding
       const urlId = Buffer.from(url).toString("base64").replace(/=/g, "");
       const response = await fetch(
         `https://www.virustotal.com/api/v3/urls/${urlId}`,
@@ -372,25 +425,233 @@ export async function checkThreatDatabases(
           headers: {
             "x-apikey": process.env.VIRUSTOTAL_API_KEY,
           },
+          signal: AbortSignal.timeout(6000),
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        const malicious = data.data?.attributes?.last_analysis_stats?.malicious || 0;
+        const stats = data.data?.attributes?.last_analysis_stats || {};
+        const malicious = stats.malicious || 0;
+        const suspicious = stats.suspicious || 0;
+        const undetected = stats.undetected || 0;
+        const harmless = stats.harmless || 0;
+        const total = malicious + suspicious + undetected + harmless;
+        
+        // Extract detailed information
+        engineDetails.virusTotal = {
+          status: malicious > 0 ? "MALICIOUS" : suspicious > 0 ? "SUSPICIOUS" : "CLEAN",
+          analysisStats: stats,
+          malicious,
+          suspicious,
+          undetected,
+          harmless,
+          total,
+          categories: data.data?.attributes?.categories || {},
+          lastAnalysisDate: data.data?.attributes?.last_analysis_date,
+          lastSubmissionDate: data.data?.attributes?.last_submission_date,
+          reputation: data.data?.attributes?.reputation || 0,
+          totalVotes: data.data?.attributes?.total_votes || {},
+          // HTTP response details
+          lastHttpResponseCode: data.data?.attributes?.last_http_response_code,
+          lastHttpResponseHeaders: data.data?.attributes?.last_http_response_headers,
+          lastHttpResponseContentLength: data.data?.attributes?.last_http_response_content_length,
+          lastHttpResponseContentSha256: data.data?.attributes?.last_http_response_content_sha256,
+          // HTML metadata
+          title: data.data?.attributes?.title,
+          favicon: data.data?.attributes?.favicon,
+          // Redirection
+          lastFinalUrl: data.data?.attributes?.last_final_url,
+          redirectionChain: data.data?.attributes?.redirection_chain || [],
+          // Trackers
+          trackers: data.data?.attributes?.trackers || {},
+          // Tags
+          tags: data.data?.attributes?.tags || [],
+        };
+        
         if (malicious > 0) {
           databases.push("VirusTotal");
           reportCount += malicious;
+          console.log(`[ENGINE 4] VirusTotal detected: ${malicious}/${total} engines flagged as malicious`);
+        } else {
+          console.log(`[ENGINE 4] VirusTotal: Clean (0/${total} engines flagged)`);
         }
+      } else if (response.status === 404) {
+        // URL not yet analyzed, submit it for scanning
+        console.log("[ENGINE 4] VirusTotal: URL not found, submitting for analysis...");
+        try {
+          const submitResponse = await fetch(
+            "https://www.virustotal.com/api/v3/urls",
+            {
+              method: "POST",
+              headers: {
+                "x-apikey": process.env.VIRUSTOTAL_API_KEY,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: `url=${encodeURIComponent(url)}`,
+              signal: AbortSignal.timeout(5000),
+            }
+          );
+          
+          if (submitResponse.ok) {
+            const submitData = await submitResponse.json();
+            engineDetails.virusTotal = {
+              status: "SUBMITTED",
+              message: "URL submitted for analysis",
+              analysisId: submitData.data?.id,
+            };
+            console.log("[ENGINE 4] VirusTotal: URL submitted successfully");
+          }
+        } catch (submitError) {
+          console.error("[ENGINE 4] VirusTotal submission failed:", submitError);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(`[ENGINE 4] VirusTotal API returned ${response.status}: ${errorText}`);
+        engineDetails.virusTotal = { status: "ERROR", error: errorText };
       }
-    } catch (error) {
-      console.error("VirusTotal check failed:", error);
+    } catch (error: any) {
+      console.error("[ENGINE 4] VirusTotal check failed:", error);
+      engineDetails.virusTotal = { status: "ERROR", error: error.message };
     }
+  } else {
+    console.warn("[ENGINE 4] VirusTotal API key not configured");
+    engineDetails.virusTotal = { status: "NOT_CONFIGURED" };
+  }
+
+  // ENGINE 5: URLScan.io API (Enhanced with result polling)
+  if (process.env.URLSCAN_API_KEY) {
+    try {
+      // Submit URL for scanning
+      const submitResponse = await fetch(
+        "https://urlscan.io/api/v1/scan/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "API-Key": process.env.URLSCAN_API_KEY,
+          },
+          body: JSON.stringify({
+            url: url,
+            visibility: "unlisted",
+          }),
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+
+      if (submitResponse.ok) {
+        const submitData = await submitResponse.json();
+        const uuid = submitData.uuid;
+        console.log(`[ENGINE 5] URLScan.io: Scan submitted (UUID: ${uuid})`);
+        
+        // Poll for results (max 3 attempts, 5 seconds apart)
+        let scanComplete = false;
+        let attempts = 0;
+        let resultData = null;
+        
+        while (!scanComplete && attempts < 3) {
+          attempts++;
+          await sleep(5000); // Wait 5 seconds before checking
+          
+          try {
+            const resultResponse = await fetch(
+              `https://urlscan.io/api/v1/result/${uuid}/`,
+              {
+                headers: {
+                  "API-Key": process.env.URLSCAN_API_KEY,
+                },
+                signal: AbortSignal.timeout(5000),
+              }
+            );
+            
+            if (resultResponse.ok) {
+              resultData = await resultResponse.json();
+              scanComplete = true;
+              console.log(`[ENGINE 5] URLScan.io: Results retrieved successfully`);
+            } else if (resultResponse.status === 404) {
+              console.log(`[ENGINE 5] URLScan.io: Scan still processing (attempt ${attempts}/3)...`);
+            }
+          } catch (pollError) {
+            console.log(`[ENGINE 5] URLScan.io: Polling attempt ${attempts} failed`);
+          }
+        }
+        
+        if (resultData) {
+          // Extract detailed scan results
+          const verdict = resultData.verdicts?.overall || {};
+          const page = resultData.page || {};
+          const stats = resultData.stats || {};
+          const meta = resultData.meta?.processors || {};
+          
+          engineDetails.urlScan = {
+            status: verdict.malicious ? "MALICIOUS" : verdict.score > 0 ? "SUSPICIOUS" : "CLEAN",
+            uuid: uuid,
+            scanUrl: `https://urlscan.io/result/${uuid}/`,
+            verdict: {
+              score: verdict.score || 0,
+              malicious: verdict.malicious || false,
+              categories: verdict.categories || [],
+              brands: verdict.brands || [],
+            },
+            page: {
+              url: page.url,
+              domain: page.domain,
+              country: page.country,
+              city: page.city,
+              server: page.server,
+              ip: page.ip,
+              asn: page.asn,
+              asnname: page.asnname,
+            },
+            stats: {
+              uniqIPs: stats.uniqIPs || 0,
+              uniqCountries: stats.uniqCountries || 0,
+              dataLength: stats.dataLength || 0,
+              encodedDataLength: stats.encodedDataLength || 0,
+              requests: stats.requests || 0,
+            },
+            meta: {
+              processors: meta,
+            },
+            // Screenshot
+            screenshot: resultData.task?.screenshotURL,
+            // Technologies detected
+            technologies: page.technologies || [],
+            // Certificate info
+            tlsCertificate: page.tlsCertificate,
+          };
+          
+          if (verdict.malicious) {
+            databases.push("URLScan.io");
+            reportCount++;
+          }
+        } else {
+          // Scan still processing
+          engineDetails.urlScan = {
+            status: "PROCESSING",
+            message: "Scan submitted, results pending",
+            uuid: uuid,
+            scanUrl: `https://urlscan.io/result/${uuid}/`,
+          };
+        }
+      } else {
+        const errorText = await submitResponse.text();
+        console.error(`[ENGINE 5] URLScan.io API returned ${submitResponse.status}: ${errorText}`);
+        engineDetails.urlScan = { status: "ERROR", error: errorText };
+      }
+    } catch (error: any) {
+      console.error("[ENGINE 5] URLScan.io check failed:", error);
+      engineDetails.urlScan = { status: "ERROR", error: error.message };
+    }
+  } else {
+    console.warn("[ENGINE 5] URLScan.io API key not configured");
+    engineDetails.urlScan = { status: "NOT_CONFIGURED" };
   }
 
   return {
     databases,
     reportCount,
+    engineDetails,
   };
 }
 

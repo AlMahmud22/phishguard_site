@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { fetchUserStats } from "@/lib/api";
 import type { UserStats, ApiResponse } from "@/types";
@@ -48,14 +49,6 @@ export default function StatsPage() {
   /// fetch user statistics on component mount
   useEffect(() => {
     const loadStats = async () => {
-      const token = localStorage.getItem("authToken");
-
-      /// redirect to login if no token found
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
       try {
         /// fetch user statistics for analytics dashboard
         const response: ApiResponse<UserStats> = await fetchUserStats();
@@ -111,7 +104,7 @@ export default function StatsPage() {
 
         <div className="card text-center py-12">
           <svg
-            className="w-16 h-16 mx-auto mb-4 text-red-500"
+            className="w-16 h-16 mx-auto mb-4 text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -120,16 +113,16 @@ export default function StatsPage() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
             />
           </svg>
-          <p className="text-red-600 font-medium">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-primary mt-4"
-          >
-            Retry
-          </button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Statistics Available</h3>
+          <p className="text-gray-600 mb-4">
+            {error || "You need to perform some scans first to see statistics. Install the desktop app to get started."}
+          </p>
+          <Link href="/" className="btn-primary">
+            Go to Home
+          </Link>
         </div>
       </div>
     );

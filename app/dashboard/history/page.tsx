@@ -32,14 +32,6 @@ export default function HistoryPage() {
   /// fetch scan history on component mount
   useEffect(() => {
     const loadHistory = async () => {
-      const token = localStorage.getItem("authToken");
-
-      /// redirect to login if no token found
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
       try {
         /// fetch user scan history from backend
         const response: ApiResponse<ScanHistory[]> = await fetchScanHistory();
@@ -76,7 +68,7 @@ export default function HistoryPage() {
 
         <div className="card text-center py-12">
           <svg
-            className="w-16 h-16 mx-auto mb-4 text-red-500"
+            className="w-16 h-16 mx-auto mb-4 text-yellow-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,13 +80,49 @@ export default function HistoryPage() {
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-red-600 font-medium">{error}</p>
+          <p className="text-yellow-600 font-medium mb-2">Unable to load history</p>
+          <p className="text-gray-600 text-sm mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="btn-primary mt-4"
+            className="btn-primary"
           >
             Retry
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  /// empty state - no scans yet
+  if (!isLoading && history.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Scan History</h1>
+          <p className="text-gray-600 mt-1">View all your URL scan records</p>
+        </div>
+
+        <div className="card text-center py-12">
+          <svg
+            className="w-16 h-16 mx-auto mb-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Scans Yet</h3>
+          <p className="text-gray-600 mb-4">
+            You haven't performed any URL scans yet. Install the desktop app to get started.
+          </p>
+          <Link href="/" className="btn-primary">
+            Go to Home
+          </Link>
         </div>
       </div>
     );

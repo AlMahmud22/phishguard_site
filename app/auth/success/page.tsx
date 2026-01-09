@@ -7,8 +7,22 @@ function AuthSuccessContentInner() {
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
   const [countdown, setCountdown] = useState(3);
-
   const [clicked, setClicked] = useState(false);
+  const [autoRedirected, setAutoRedirected] = useState(false);
+
+  // Auto-redirect to desktop app when page loads
+  useEffect(() => {
+    if (code && !autoRedirected) {
+      setAutoRedirected(true);
+      setClicked(true);
+      
+      const localCallbackUrl = `http://localhost:3456/auth/callback?code=${code}`;
+      console.log('[Success] Auto-redirecting to desktop app:', localCallbackUrl);
+      
+      // Try to open the localhost callback
+      window.location.href = localCallbackUrl;
+    }
+  }, [code, autoRedirected]);
 
   const handleOpenDesktop = () => {
     if (!code) return;
@@ -17,7 +31,7 @@ function AuthSuccessContentInner() {
     // Open localhost callback - this is much more reliable than custom protocols
     const localCallbackUrl = `http://localhost:3456/auth/callback?code=${code}`;
     
-    console.log('[Success] Opening desktop app via localhost:', localCallbackUrl);
+    console.log('[Success] Manual click - Opening desktop app via localhost:', localCallbackUrl);
     window.location.href = localCallbackUrl;
   };
 

@@ -17,6 +17,20 @@ export async function register() {
       await testMongoDBConnection();
     }
     
+    // Verify email configuration
+    const { verifyEmailConfiguration } = await import('./lib/email');
+    await verifyEmailConfiguration();
+    
+    // Initialize cron jobs in production
+    if (process.env.NODE_ENV === 'production') {
+      const { initCronJobs } = await import('./lib/cronJobs');
+      initCronJobs();
+    }
+    
+    // Start health monitoring
+    const { startHealthMonitoring } = await import('./lib/healthMonitor');
+    startHealthMonitoring(5); // Check every 5 minutes
+    
     console.log('🌐 Starting Next.js development server...\n');
   }
 }

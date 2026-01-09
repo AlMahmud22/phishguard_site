@@ -7,6 +7,12 @@ import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
 import Log from "@/lib/models/Log";
 import { validateAndConsumeCode } from "@/lib/oneTimeCode";
+import { corsMiddleware, handleCorsOptions } from "@/lib/cors";
+
+/// Handle CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  return handleCorsOptions(req);
+}
 
 /**
  * POST /api/auth/token
@@ -83,18 +89,18 @@ export async function POST(req: NextRequest) {
     await Log.create({
       userId: user._id,
       action: "jwt_token_generated",
-      details: {
+      details: JSON.stringify({
         email: user.email,
         userAgent: req.headers.get("user-agent") || "unknown",
         purpose: "desktop_client",
         method: authMethod,
-      },
+      }),
       ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
       timestamp: new Date(),
     });
 
-    // Return tokens
-    return createSuccessResponse(
+    // Return tokens with CORS headers
+    const response = createSuccessResponse(
       {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -111,10 +117,33 @@ export async function POST(req: NextRequest) {
       },
       "Tokens generated successfully"
     );
+    // Add CORS headers
+    const origin = req.headers.get("origin");
+    if (origin && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Token generation error:", error);
-    return ErrorResponses.internalError(
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    
+    // Return error with CORS headers
+    const errorResponse = ErrorResponses.internalError(
       "An error occurred while generating tokens"
     );
+    
+    const origin = req.headers.get("origin");
+    if (origin && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+      errorResponse.headers.set("Access-Control-Allow-Origin", origin);
+      errorResponse.headers.set("Access-Control-Allow-Credentials", "true");
+    }
+    
+    return errorResponse;
   }
 }

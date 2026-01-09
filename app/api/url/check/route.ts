@@ -1,48 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
-import User from "@/lib/models/User";
 import Scan from "@/lib/models/Scan";
 import Log from "@/lib/models/Log";
 import { scanUrl } from "@/lib/scanner";
 import { nanoid } from "nanoid";
+import { authenticateRequest } from "@/lib/authMiddleware";
+import { ErrorResponses } from "@/lib/apiResponse";
 
 /**
  * POST /api/url/check
  * Scan a single URL for phishing and malware
+ * Supports both JWT authentication (desktop) and NextAuth session (web)
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to scan URLs",
-        },
-        { status: 401 }
+    // Authenticate request (supports both JWT and NextAuth session)
+    const { user: authUser, error: authError } = await authenticateRequest(req);
+    
+    if (!authUser) {
+      return ErrorResponses.unauthorized(
+        "You must be logged in to scan URLs"
       );
     }
 
     await dbConnect();
 
-    // Get user
-    const user = await User.findOne({ email: session.user.email });
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-          message: "User account not found",
-        },
-        { status: 404 }
-      );
-    }
+    // User is already fetched by authenticateRequest
+    const user = authUser.user;
 
     // Parse request body
     const body = await req.json();

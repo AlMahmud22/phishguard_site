@@ -3,6 +3,12 @@ import { verifyRefreshToken, generateAccessToken } from "@/lib/jwt";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
 import Log from "@/lib/models/Log";
+import { handleCorsOptions } from "@/lib/cors";
+
+/// Handle CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  return handleCorsOptions(req);
+}
 
 /**
  * POST /api/auth/refresh
@@ -80,8 +86,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date(),
     });
 
-    // Return new access token
-    return NextResponse.json(
+    // Return new access token with CORS headers
+    const response = NextResponse.json(
       {
         success: true,
         data: {
@@ -93,6 +99,15 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
+
+    // Add CORS headers for desktop app
+    const origin = req.headers.get("origin");
+    if (origin && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Token refresh error:", error);
     return NextResponse.json(

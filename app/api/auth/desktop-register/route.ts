@@ -7,6 +7,12 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import { validatePassword, generateSecureToken } from "@/lib/passwordValidation";
 import { sendVerificationEmail } from "@/lib/email";
 import { createSuccessResponse, ErrorResponses } from "@/lib/apiResponse";
+import { handleCorsOptions } from "@/lib/cors";
+
+/// Handle CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  return handleCorsOptions(req);
+}
 
 /**
  * POST /api/auth/desktop-register
@@ -162,7 +168,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    return createSuccessResponse(
+    const response = createSuccessResponse(
       {
         requiresVerification: true,
         emailSent,
@@ -178,6 +184,15 @@ export async function POST(req: NextRequest) {
         : "Account created! Email verification is required, but the email service is currently unavailable.",
       201
     );
+
+    // Add CORS headers for desktop app
+    const origin = req.headers.get("origin");
+    if (origin && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Desktop registration error:", error);
     

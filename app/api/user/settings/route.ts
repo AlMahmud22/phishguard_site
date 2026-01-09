@@ -43,6 +43,10 @@ export async function GET(req: NextRequest) {
         shareAnonymousData: true,
         improveModel: true,
       },
+      monitoredApps: {
+        universalMonitoring: false,
+        applications: [],
+      },
     };
 
     return createSuccessResponse(
@@ -126,6 +130,22 @@ export async function PUT(req: NextRequest) {
         ...updatedSettings.privacy,
         ...settings.privacy,
       };
+    }
+
+    if (settings.monitoredApps) {
+      updatedSettings.monitoredApps = {
+        universalMonitoring: settings.monitoredApps.universalMonitoring ?? updatedSettings.monitoredApps?.universalMonitoring ?? false,
+        applications: settings.monitoredApps.applications || updatedSettings.monitoredApps?.applications || [],
+      };
+
+      // Validate monitored apps structure
+      if (updatedSettings.monitoredApps.applications && Array.isArray(updatedSettings.monitoredApps.applications)) {
+        for (const app of updatedSettings.monitoredApps.applications) {
+          if (!app.id || !app.name || !app.category || typeof app.enabled !== 'boolean') {
+            return ErrorResponses.invalidRequest("Invalid monitored application structure");
+          }
+        }
+      }
     }
 
     // Update user settings

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useHasAnyRole } from "@/components/RoleGuard";
+import ConnectionStatusBanner from "@/components/ConnectionStatusBanner";
 
 /// loading component displayed while page content is being loaded
 function DashboardLoading() {
@@ -29,6 +30,27 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: session } = useSession();
   const isAdminOrTester = useHasAnyRole(["admin", "tester"]);
+
+  /// Set initial sidebar state based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      // Open sidebar by default on desktop (lg breakpoint = 1024px)
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   /// Base navigation items for all users
   const baseNavItems = [
@@ -129,7 +151,7 @@ export default function DashboardLayout({
       {/* Mobile sidebar backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-20 lg:hidden"
+          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -137,10 +159,10 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-30
-          w-64 bg-white border-r border-gray-200
-          transform transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          fixed lg:relative left-0 top-0 bottom-0 z-50
+          w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto
+          transform transition-transform duration-300 ease-in-out lg:transform-none
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         <div className="flex flex-col h-full">
@@ -163,7 +185,12 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => {
+                  // Only close sidebar on mobile
+                  if (window.innerWidth < 1024) {
+                    setIsSidebarOpen(false);
+                  }
+                }}
                 className={`
                   flex items-center space-x-3 px-4 py-3 rounded-lg
                   transition-colors duration-200
@@ -196,24 +223,34 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen w-full lg:w-auto">
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
           <div className="px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
-              {/* Mobile menu button */}
+              {/* Menu toggle button - visible on all screen sizes */}
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Toggle navigation menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  {isSidebarOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
                 </svg>
               </button>
 
               {/* Page title - can be customized per page */}
-              <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
-                Dashboard
+              <h1 className="text-xl font-semibold text-gray-900">
+                {pathname === "/dashboard" ? "Dashboard Overview" :
+                 pathname === "/dashboard/history" ? "Scan History" :
+                 pathname === "/dashboard/stats" ? "Statistics" :
+                 pathname === "/dashboard/settings" ? "Settings" :
+                 pathname?.includes("/admin") ? "Admin Panel" :
+                 "Dashboard"}
               </h1>
 
               {/* User menu */}
@@ -242,6 +279,7 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <ConnectionStatusBanner />
           <Suspense fallback={<DashboardLoading />}>
             {children}
           </Suspense>

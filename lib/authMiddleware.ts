@@ -5,10 +5,11 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import User, { IUser } from "@/lib/models/User";
 import { ErrorResponses } from "@/lib/apiResponse";
+import bcrypt from 'bcryptjs';
 
 /**
  * JWT Authentication Middleware
- * Supports both JWT tokens (for desktop) and NextAuth sessions (for web)
+ * Supports JWT tokens, desktop app keys, and NextAuth sessions
  */
 
 export interface AuthenticatedUser {
@@ -18,10 +19,72 @@ export interface AuthenticatedUser {
   role: string;
   isPremium: boolean;
   user: IUser;
+  authType?: 'jwt' | 'desktop-key' | 'session';
 }
 
 /**
- * Authenticate request using JWT or NextAuth session
+ * Authenticate request using desktop app key
+ */
+async function authenticateWithDesktopKey(
+  key: string
+): Promise<{ user: AuthenticatedUser | null; error?: any }> {
+  // Desktop keys have format: pgd_{userId}_{random}
+  if (!key.startsWith('pgd_')) {
+    return { user: null };
+  }
+  
+  try {
+    // Extract user ID prefix from key
+    const parts = key.split('_');
+    if (parts.length !== 3) {
+      return { user: null };
+    }
+    
+    const userIdPrefix = parts[1];
+    
+    // Find users whose ID starts with this prefix
+    const users = await User.find({
+      _id: { $regex: `^${userIdPrefix}` },
+      'desktopAppKeys.isActive': true
+    });
+    
+    // Check each user's keys
+    for (const user of users) {
+      if (!user.desktopAppKeys) continue;
+      
+      for (const keyData of user.desktopAppKeys) {
+        if (!keyData.isActive) continue;
+        
+        // Verify the key
+        const isValid = await bcrypt.compare(key, keyData.key);
+        if (isValid) {
+          // Update last used timestamp
+          keyData.lastUsed = new Date();
+          await user.save();
+          
+          return {
+            user: {
+              id: String(user._id),
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              isPremium: user.isPremium || false,
+              user: user,
+              authType: 'desktop-key'
+            }
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Desktop key authentication error:', error);
+  }
+  
+  return { user: null };
+}
+
+/**
+ * Authenticate request using JWT or desktop key or NextAuth session
  * Returns user if authenticated, null otherwise
  */
 export async function authenticateRequest(
@@ -29,7 +92,16 @@ export async function authenticateRequest(
 ): Promise<{ user: AuthenticatedUser | null; error?: any }> {
   await dbConnect();
 
-  // Try JWT authentication first (for desktop client)
+  // Check for desktop app key first (X-Desktop-Key header)
+  const desktopKey = req.headers.get("x-desktop-key");
+  if (desktopKey) {
+    const result = await authenticateWithDesktopKey(desktopKey);
+    if (result.user) {
+      return result;
+    }
+  }
+
+  // Try JWT authentication (for desktop client with JWT)
   const authHeader = req.headers.get("authorization");
   if (authHeader) {
     const token = extractBearerToken(authHeader);
@@ -47,6 +119,7 @@ export async function authenticateRequest(
               role: user.role,
               isPremium: user.isPremium || false,
               user: user,
+              authType: 'jwt'
             },
           };
         }
@@ -67,6 +140,7 @@ export async function authenticateRequest(
           role: user.role,
           isPremium: user.isPremium || false,
           user: user,
+          authType: 'session'
         },
       };
     }
