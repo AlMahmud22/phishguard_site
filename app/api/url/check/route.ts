@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Scan from "@/lib/models/Scan";
+import User from "@/lib/models/User";
 import Log from "@/lib/models/Log";
 import { scanUrl } from "@/lib/scanner";
 import { nanoid } from "nanoid";

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { fetchScanHistory } from "@/lib/api";
 import type { ScanHistory, ApiResponse } from "@/types";
