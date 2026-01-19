@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+echo "🚀 Deploy started..."
+
+cd /var/www/html/mahmud/phishguard_web
+
+echo "📥 Pulling latest code..."
+git pull origin main
+
+echo "📦 Installing dependencies..."
+npm install --production=false
+
+echo "🏗️ Building app..."
+npm run build
+
+echo "🔁 Restarting app..."
+pm2 restart phishguard || pm2 start npm --name "phishguard" -- start
+
+echo "✅ Deploy finished!"
