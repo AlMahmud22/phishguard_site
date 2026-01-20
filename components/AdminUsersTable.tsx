@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { AdminUser, AdminUsersResponse } from "@/types";
 
 interface AdminUsersTableProps {
@@ -10,6 +11,7 @@ interface AdminUsersTableProps {
 /// AdminUsersTable component - displays user list with sorting and filtering
 /// Allows admins to view and manage user accounts
 export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
+  const { data: session } = useSession();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +19,10 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  // Check if current user is admin
+  const isAdmin = session?.user?.role === "admin";
 
   useEffect(() => {
     fetchUsers();
@@ -58,7 +64,17 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!isAdmin) {
+      alert("Only administrators can change user roles.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      return;
+    }
+
     try {
+      setUpdatingUserId(userId);
       const response = await fetch(`/api/admin/users`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -71,11 +87,18 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
         throw new Error(data.error || "Failed to update user role");
       }
 
+      // Show success message
+      alert(`User role updated successfully to ${newRole}`);
+
       // Refresh user list
       fetchUsers();
       if (onRefresh) onRefresh();
     } catch (err: any) {
       alert(`Error: ${err.message}`);
+      // Revert the select value by refetching
+      fetchUsers();
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
@@ -187,7 +210,11 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
                   <select
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="text-sm text-gray-900 border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    disabled={!isAdmin || updatingUserId === user.id}
+                    className={`text-sm text-gray-900 border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                      !isAdmin ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    } ${updatingUserId === user.id ? "opacity-50" : ""}`}
+                    title={!isAdmin ? "Only administrators can change roles" : ""}
                   >
                     <option value="user">User</option>
                     <option value="tester">Tester</option>

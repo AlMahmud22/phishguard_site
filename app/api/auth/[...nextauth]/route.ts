@@ -163,13 +163,20 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
       }
 
-      // For OAuth users, fetch role from database
-      if (account?.provider !== "credentials" && token.email) {
+      // Always fetch the latest role from database to ensure it's up-to-date
+      if (token.email) {
         await connectToDatabase();
-        const dbUser = await User.findOne({
-          provider: account?.provider,
-          providerId: account?.providerAccountId,
-        });
+        
+        // Try to find user by email first (handles linked accounts)
+        let dbUser = await User.findOne({ email: token.email });
+        
+        // If not found by email and it's an OAuth login, try by provider
+        if (!dbUser && account?.provider !== "credentials") {
+          dbUser = await User.findOne({
+            provider: account?.provider,
+            providerId: account?.providerAccountId,
+          });
+        }
 
         if (dbUser) {
           token.id = (dbUser._id as any).toString();

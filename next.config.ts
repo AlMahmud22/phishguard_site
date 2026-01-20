@@ -47,10 +47,12 @@ const nextConfig: NextConfig = {
   // experimental features
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['recharts', 'axios'],
+    optimizePackageImports: ['recharts', 'axios', 'framer-motion'],
+    scrollRestoration: true,
   },
   
   turbopack: {},
 };
 
+export default nextConfig;
 export default nextConfig;

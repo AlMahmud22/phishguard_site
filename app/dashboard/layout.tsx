@@ -105,11 +105,29 @@ export default function DashboardLayout({
       ),
     },
     {
+      name: "Desktop Apps",
+      href: "/dashboard/admin/desktop-sessions",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
       name: "Logs",
       href: "/dashboard/admin/logs",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: "API Status",
+      href: "/dashboard/admin/api-status",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
@@ -147,11 +165,11 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Mobile sidebar backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -159,28 +177,25 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:relative left-0 top-0 bottom-0 z-50
-          w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto
-          transform transition-transform duration-300 ease-in-out lg:transform-none
+          fixed lg:relative left-0 top-0 lg:top-0 bottom-0 z-40 lg:z-10
+          w-64 bg-slate-900/95 border-r border-slate-700/50 h-screen lg:h-screen overflow-hidden
+          transform transition-transform duration-300 ease-in-out lg:transform-none shadow-xl lg:shadow-none
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Sidebar header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center space-x-2">
+          <div className="p-6 border-b border-slate-700/50 flex-shrink-0">
+            <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">P</span>
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">PhishGuard</h2>
-                <p className="text-xs text-gray-500">Dashboard</p>
-              </div>
+              <h2 className="text-lg font-bold text-white">PhishGuard</h2>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -192,12 +207,12 @@ export default function DashboardLayout({
                   }
                 }}
                 className={`
-                  flex items-center space-x-3 px-4 py-3 rounded-lg
-                  transition-colors duration-200
+                  flex items-center space-x-3 px-4 py-2.5 rounded-lg
+                  transition-colors duration-150
                   ${
                     isActive(item.href)
-                      ? "bg-primary-50 text-primary-700 font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-primary-600 text-white"
+                      : "text-gray-300 hover:bg-slate-800 hover:text-white"
                   }
                 `}
               >
@@ -206,74 +221,23 @@ export default function DashboardLayout({
               </Link>
             ))}
           </nav>
-
-          {/* Sidebar footer */}
-          <div className="p-4 border-t border-gray-200">
-            <Link
-              href="/"
-              className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span>Back to Home</span>
-            </Link>
-          </div>
         </div>
       </aside>
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-screen w-full lg:w-auto">
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-          <div className="px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              {/* Menu toggle button - visible on all screen sizes */}
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                aria-label="Toggle navigation menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isSidebarOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-
-              {/* Page title - can be customized per page */}
-              <h1 className="text-xl font-semibold text-gray-900">
-                {pathname === "/dashboard" ? "Dashboard Overview" :
-                 pathname === "/dashboard/history" ? "Scan History" :
-                 pathname === "/dashboard/stats" ? "Statistics" :
-                 pathname === "/dashboard/settings" ? "Settings" :
-                 pathname?.includes("/admin") ? "Admin Panel" :
-                 "Dashboard"}
-              </h1>
-
-              {/* User menu */}
-              <div className="flex items-center space-x-4">
-                <button className="p-2 rounded-md text-gray-600 hover:bg-gray-100">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                </button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {session?.user?.name?.[0]?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                  {session?.user?.role && (
-                    <span className="hidden sm:inline-block px-2 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700">
-                      {session.user.role}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+        <header className="bg-slate-900/95 border-b border-slate-700/50 sticky top-0 z-50 backdrop-blur-sm">
+          <div className="px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex-1"></div>
           </div>
         </header>
 

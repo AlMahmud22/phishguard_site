@@ -25,6 +25,7 @@
     "@types/nodemailer": "^7.0.3",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
+    "framer-motion": "^12.27.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "nanoid": "^5.1.6",

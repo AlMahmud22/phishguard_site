@@ -51,10 +51,28 @@ export default function StatsPage() {
     const loadStats = async () => {
       try {
         /// fetch user statistics for analytics dashboard
-        const response: ApiResponse<UserStats> = await fetchUserStats();
+        const response = await fetchUserStats();
         
         if (response.success && response.data) {
-          setStats(response.data);
+          // Transform API response to match expected UserStats format
+          const apiData = response.data;
+          const transformedStats: UserStats = {
+            totalScans: apiData.overview?.totalScans || 0,
+            phishingDetected: apiData.overview?.threatsDetected || 0,
+            safeUrls: apiData.overview?.safeCount || 0,
+            averageConfidence: (apiData.overview?.averageScore || 0) / 100, // Convert score to confidence
+            scansByDate: (apiData.activityByDay || []).map((day: any) => ({
+              date: day.date,
+              scans: day.count,
+              phishing: day.danger + day.warning,
+              safe: day.safe,
+            })),
+            topThreats: (apiData.recentDangers || []).map((danger: any) => ({
+              url: danger.url,
+              count: 1, // API doesn't provide count, using 1 as placeholder
+            })).slice(0, 10),
+          };
+          setStats(transformedStats);
         } else {
           setError(response.message || "Failed to load statistics");
         }

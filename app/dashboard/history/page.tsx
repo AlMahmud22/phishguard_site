@@ -35,10 +35,10 @@ export default function HistoryPage() {
     const loadHistory = async () => {
       try {
         /// fetch user scan history from backend
-        const response: ApiResponse<ScanHistory[]> = await fetchScanHistory();
+        const response = await fetchScanHistory();
         
-        if (response.success && response.data) {
-          setHistory(response.data);
+        if (response.success && response.data?.scans) {
+          setHistory(response.data.scans);
         } else {
           setError(response.message || "Failed to load scan history");
         }
@@ -146,13 +146,13 @@ export default function HistoryPage() {
         <div className="card">
           <p className="text-gray-600 text-sm">Phishing Detected</p>
           <p className="text-2xl font-bold text-red-600 mt-1">
-            {history.filter((scan) => scan.isPhishing).length}
+            {history.filter((scan: any) => scan.status === "danger" || scan.status === "warning").length}
           </p>
         </div>
         <div className="card">
           <p className="text-gray-600 text-sm">Safe URLs</p>
           <p className="text-2xl font-bold text-green-600 mt-1">
-            {history.filter((scan) => !scan.isPhishing).length}
+            {history.filter((scan: any) => scan.status === "safe").length}
           </p>
         </div>
       </div>

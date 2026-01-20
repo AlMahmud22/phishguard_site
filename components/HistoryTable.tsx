@@ -4,14 +4,14 @@ import type { ScanHistory } from "@/types";
 import { useState } from "react";
 
 interface HistoryTableProps {
-  history: ScanHistory[];
+  history: any[];  // Using any temporarily to match API response
   isLoading?: boolean;
 }
 
 /// HistoryTable component displays user scan records in a sortable table
 /// shows URL, status, confidence, date, and source for each scan
 export default function HistoryTable({ history, isLoading = false }: HistoryTableProps) {
-  const [sortField, setSortField] = useState<keyof ScanHistory>("scanDate");
+  const [sortField, setSortField] = useState<string>("timestamp");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   /// sort history data by specified field
@@ -33,7 +33,7 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
   });
 
   /// toggle sort order or change sort field
-  const handleSort = (field: keyof ScanHistory) => {
+  const handleSort = (field: string) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
@@ -127,11 +127,11 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
             </th>
             <th
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort("scanDate")}
+              onClick={() => handleSort("timestamp")}
             >
               <div className="flex items-center space-x-1">
                 <span>Scan Date</span>
-                {sortField === "scanDate" && (
+                {sortField === "timestamp" && (
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     {sortOrder === "asc" ? (
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -149,16 +149,20 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sortedHistory.map((scan) => (
-            <tr key={scan.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={scan.scanId} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
                   {scan.url}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {scan.isPhishing ? (
+                {scan.status === "danger" ? (
                   <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                     Phishing
+                  </span>
+                ) : scan.status === "warning" ? (
+                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Warning
                   </span>
                 ) : (
                   <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
@@ -180,11 +184,11 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {new Date(scan.scanDate).toLocaleString()}
+                {new Date(scan.timestamp).toLocaleString()}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                  {scan.source}
+                  {scan.context || "web"}
                 </span>
               </td>
             </tr>

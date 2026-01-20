@@ -26,28 +26,42 @@ export async function checkRateLimit(
   const { endpoint, limit, windowMs = 3600000 } = config; // default 1 hour
   const now = new Date();
 
-  // find or create rate limit record
-  let rateLimitRecord = await RateLimit.findOne({ userId, endpoint });
+  // Use findOneAndUpdate with upsert to avoid duplicate key errors
+  // This handles concurrent requests properly
+  const rateLimitRecord = await RateLimit.findOneAndUpdate(
+    { userId, endpoint },
+    {
+      $setOnInsert: {
+        userId,
+        endpoint,
+        requestsCount: 0,
+        windowStart: now,
+        lastReset: now,
+        violations: 0,
+        limit,
+      },
+    },
+    {
+      upsert: true,
+      new: false, // return original document
+      runValidators: true,
+    }
+  );
 
+  // If document was just created (rateLimitRecord is null), fetch it
   if (!rateLimitRecord) {
-    // create new rate limit record
-    rateLimitRecord = await RateLimit.create({
-      userId,
-      endpoint,
-      requestsCount: 1,
-      windowStart: now,
-      lastReset: now,
-      violations: 0,
-      limit,
-    });
-
-    return {
-      allowed: true,
-      remaining: limit - 1,
-      resetAt: new Date(now.getTime() + windowMs),
-      limit,
-      current: 1,
-    };
+    const newRecord = await RateLimit.findOne({ userId, endpoint });
+    if (newRecord) {
+      newRecord.requestsCount = 1;
+      await newRecord.save();
+      return {
+        allowed: true,
+        remaining: limit - 1,
+        resetAt: new Date(now.getTime() + windowMs),
+        limit,
+        current: 1,
+      };
+    }
   }
 
   // check if window expired

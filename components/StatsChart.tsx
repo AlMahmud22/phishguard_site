@@ -146,10 +146,10 @@ export default function StatsChart({ stats, type = "line" }: StatsChartProps) {
 }
 
 /// TopThreatsChart displays most frequently detected phishing URLs
-export function TopThreatsChart({ threats }: { threats: { url: string; count: number }[] }) {
+export function TopThreatsChart({ threats }: { threats?: { url: string; count: number }[] }) {
   return (
     <div className="space-y-3">
-      {threats.length === 0 ? (
+      {!threats || threats.length === 0 ? (
         <p className="text-gray-500 text-center py-4">No threats detected yet</p>
       ) : (
         threats.map((threat, index) => (
