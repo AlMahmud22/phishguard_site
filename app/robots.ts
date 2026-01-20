@@ -3,7 +3,7 @@ import { MetadataRoute } from "next";
 /// generate robots.txt for search engine crawler control
 /// allows indexing of public pages while protecting authenticated areas
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = "https://phish.equators.tech";
+  const baseUrl = "https://phish.tnpx.tech";
 
   return {
     rules: [

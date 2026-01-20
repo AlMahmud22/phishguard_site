@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 /// comprehensive metadata configuration for SEO, social sharing, and browser display
 /// includes Open Graph tags for social media previews and Twitter Card metadata
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://phish.equators.tech'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://phish.tnpx.tech'),
   
   title: {
     default: "PhishGuard - Advanced Phishing Detection System",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://phish.equators.tech",
+    url: "https://phish.tnpx.tech",
     siteName: "PhishGuard",
     title: "PhishGuard - Advanced Phishing Detection System",
     description: "Protect yourself from phishing attacks with PhishGuard's intelligent URL scanning and real-time threat detection.",

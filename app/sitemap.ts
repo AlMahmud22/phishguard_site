@@ -3,7 +3,7 @@ import { MetadataRoute } from "next";
 /// generate dynamic sitemap for SEO
 /// lists all public routes with priority and change frequency metadata
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://phish.equators.tech";
+  const baseUrl = "https://phish.tnpx.tech";
   const currentDate = new Date();
 
   return [
