@@ -94,51 +94,40 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Generate verification token
-    const verificationToken = generateSecureToken(32);
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       passwordHash,
       provider: "credentials",
       role: "user",
+      accountStatus: "pending", // Admin approval required
       emailVerified: false,
-      verificationToken,
-      verificationTokenExpires,
     });
 
     const userId = (user._id as any).toString();
 
-    // Send verification email
-    const emailSent = await sendVerificationEmail(user.email, user.name, verificationToken);
-
     await logInfo(
       "User Registration",
-      `New user registered: ${email}`,
+      `New user registered (pending approval): ${email}`,
       {
         userId,
         userName: name,
         ipAddress,
         userAgent,
-        metadata: { email, provider: "credentials", emailSent },
+        metadata: { email, provider: "credentials", accountStatus: "pending" },
       }
     );
 
     return NextResponse.json(
       {
         success: true,
-        message: emailSent 
-          ? "Account created! Please check your email to verify your account."
-          : "Account created! Email verification required but email service is not configured.",
-        requiresVerification: true,
-        emailSent,
+        message: "Account created successfully! You can now login. An admin will review your account shortly.",
         user: {
           id: userId,
           name: user.name,
           email: user.email,
           role: user.role,
+          accountStatus: user.accountStatus,
         },
       },
       { status: 201 }

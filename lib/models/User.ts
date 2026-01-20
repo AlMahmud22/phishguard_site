@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export type UserRole = "user" | "tester" | "admin";
 export type AuthProvider = "credentials" | "google" | "github";
+export type AccountStatus = "pending" | "approved" | "rejected";
 
 export interface IMonitoredApp {
   id: string;
@@ -42,6 +43,7 @@ export interface IUser extends Document {
   role: UserRole;
   provider: AuthProvider;
   providerId?: string;
+  accountStatus: AccountStatus;
   emailVerified: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
@@ -108,6 +110,11 @@ const UserSchema = new Schema<IUser>(
     providerId: {
       type: String,
       sparse: true,
+    },
+    accountStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
     emailVerified: {
       type: Boolean,

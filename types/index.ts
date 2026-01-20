@@ -125,6 +125,7 @@ export interface AdminUser {
   name: string;
   role: UserRole;
   provider: AuthProvider;
+  accountStatus?: "pending" | "approved" | "rejected";
   isActive: boolean;
   totalScans: number;
   lastLogin?: string;

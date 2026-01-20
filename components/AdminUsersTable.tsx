@@ -102,6 +102,42 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
     }
   };
 
+  const handleStatusChange = async (userId: string, newStatus: string) => {
+    if (!isAdmin) {
+      alert("Only administrators can change account status.");
+      return;
+    }
+
+    const statusLabel = newStatus === "approved" ? "approve" : "reject";
+    if (!confirm(`Are you sure you want to ${statusLabel} this user?`)) {
+      return;
+    }
+
+    try {
+      setUpdatingUserId(userId);
+      const response = await fetch(`/api/admin/users`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, accountStatus: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update account status");
+      }
+
+      alert(`User account ${statusLabel}d successfully`);
+      fetchUsers();
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+      fetchUsers();
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   if (isLoading && users.length === 0) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -173,6 +209,9 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
                 Role
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Provider
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -220,6 +259,40 @@ export default function AdminUsersTable({ onRefresh }: AdminUsersTableProps) {
                     <option value="tester">Tester</option>
                     <option value="admin">Admin</option>
                   </select>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {user.provider === "credentials" ? (
+                    user.accountStatus === "pending" ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleStatusChange(user.id, "approved")}
+                          disabled={!isAdmin || updatingUserId === user.id}
+                          className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(user.id, "rejected")}
+                          disabled={!isAdmin || updatingUserId === user.id}
+                          className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.accountStatus === "approved" 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {user.accountStatus}
+                      </span>
+                    )
+                  ) : (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      auto-approved
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">

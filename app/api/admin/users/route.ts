@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
       name: user.name,
       role: user.role,
       provider: user.provider,
+      accountStatus: user.accountStatus || "approved",
       isActive: true, // could add isActive field to schema later
       totalScans: 0, // TODO: calculate from scans collection
       lastLogin: undefined, // TODO: add lastLogin tracking
@@ -170,7 +171,7 @@ export async function PATCH(request: NextRequest) {
     await connectToDatabase();
 
     const body = await request.json();
-    const { userId, role, isActive } = body;
+    const { userId, role, accountStatus, isActive } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -184,6 +185,10 @@ export async function PATCH(request: NextRequest) {
     
     if (role && ["user", "tester", "admin"].includes(role)) {
       update.role = role;
+    }
+
+    if (accountStatus && ["pending", "approved", "rejected"].includes(accountStatus)) {
+      update.accountStatus = accountStatus;
     }
 
     if (typeof isActive === "boolean") {

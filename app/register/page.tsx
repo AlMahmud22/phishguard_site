@@ -98,7 +98,6 @@ export default function RegisterPage() {
       if (data.success) {
         setSuccess(data.message);
         setShowVerificationMessage(true);
-        // Don't auto-login - user needs to verify email first
       } else {
         if (data.errors && Array.isArray(data.errors)) {
           setErrors(data.errors);
@@ -121,18 +120,18 @@ export default function RegisterPage() {
             <div className="text-center">
               <div className="mb-4 text-6xl">✅</div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Check Your Email!
+                Account Created!
               </h1>
               <p className="text-gray-600 mb-6">
-                We've sent a verification link to <strong>{formData.email}</strong>
+                Your account <strong>{formData.email}</strong> has been created successfully.
               </p>
               <p className="text-gray-600 mb-6">
-                Please click the link in the email to verify your account before logging in.
+                You can now login and start using PhishGuard. An admin will review and approve your account shortly.
               </p>
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
                 <p className="text-sm">
-                  <strong>Didn't receive the email?</strong><br />
-                  Check your spam folder or wait a few minutes and try again.
+                  <strong>Note:</strong><br />
+                  While your account is pending approval, you can still login and explore the platform.
                 </p>
               </div>
               <Link

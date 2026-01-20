@@ -31,11 +31,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
-        // Check if email is verified
-        if (!user.emailVerified) {
-          throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
-        }
-
         const isValidPassword = await bcrypt.compare(
           credentials.password,
           user.passwordHash
@@ -92,7 +87,7 @@ export const authOptions: NextAuthOptions = {
         const existingUser = await User.findOne({ email: user.email });
 
         if (existingUser) {
-          // If user exists with same provider, just update
+          // If user exists with same provider, just update and allow login
           if (existingUser.provider === account.provider && 
               existingUser.providerId === account.providerAccountId) {
             await User.findOneAndUpdate(
@@ -105,7 +100,7 @@ export const authOptions: NextAuthOptions = {
             return true;
           }
 
-          // If user exists with different provider, check if we should link accounts
+          // If user exists with different provider
           if (existingUser.provider !== account.provider) {
             // Check if this OAuth provider is already linked
             const isAlreadyLinked = existingUser.linkedAccounts?.some(
@@ -116,36 +111,22 @@ export const authOptions: NextAuthOptions = {
               return true; // Already linked, allow sign in
             }
 
-            // Auto-link OAuth accounts if email is verified or it's an OAuth account
-            if (existingUser.emailVerified || existingUser.provider !== 'credentials') {
-              await User.findOneAndUpdate(
-                { _id: existingUser._id },
-                {
-                  $addToSet: {
-                    linkedAccounts: {
-                      provider: account.provider,
-                      providerId: account.providerAccountId,
-                    }
-                  }
-                }
-              );
-              return true; // Linked successfully
-            } else {
-              // Don't allow OAuth login if credentials account exists but unverified
-              throw new Error(
-                `This email is already registered. Please verify your email first or login with your password.`
-              );
-            }
+            // Show clear message about which provider to use
+            const providerName = existingUser.provider === 'credentials' ? 'email and password' : existingUser.provider;
+            throw new Error(
+              `This email is already registered with ${providerName}. Please use ${providerName} to login.`
+            );
           }
         } else {
-          // No existing user, create new one
+          // No existing user, create new one with auto-approval for OAuth
           await User.create({
             name: user.name,
             email: user.email,
             provider: account.provider,
             providerId: account.providerAccountId,
             role: "user",
-            emailVerified: true, // OAuth emails are pre-verified
+            accountStatus: "approved", // OAuth users are auto-approved
+            emailVerified: true,
             linkedAccounts: [{
               provider: account.provider,
               providerId: account.providerAccountId,
