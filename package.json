@@ -1,5 +1,5 @@
 {
-  "name": "phish.equators.tech",
+  "name": "phish.tnpx.tech",
   "version": "1.0.0",
   "description": "PhishGuard Web Dashboard - Final Year Project",
   "type": "module",
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlMahmud22/phish.equators.tech.git"
+    "url": "git+https://github.com/AlMahmud22/phishguard_site.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/AlMahmud22/phish.equators.tech/issues"
+    "url": "https://github.com/AlMahmud22/phishguard_site/issues"
   },
-  "homepage": "https://github.com/AlMahmud22/phish.equators.tech#readme",
+  "homepage": "https://github.com/AlMahmud22/phishguard_site#readme",
   "dependencies": {
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.3",

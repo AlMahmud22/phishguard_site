@@ -9,7 +9,10 @@ echo "📥 Pulling latest code..."
 git pull origin main
 
 echo "📦 Installing dependencies..."
-npm install --production=false
+npm install --omit=dev
+
+echo "🧹 Cleaning up lock files..."
+rm -f .next/lock
 
 echo "🏗️ Building app..."
 npm run build
