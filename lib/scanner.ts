@@ -12,6 +12,7 @@ export interface ScanResult {
   status: "safe" | "warning" | "danger";
   score: number;
   confidence: number;
+  partial?: boolean;
   verdict: {
     isSafe: boolean;
     isPhishing: boolean;
@@ -51,8 +52,30 @@ export interface ScanResult {
       engineDetails?: any;
     };
   };
+  engines?: {
+    engine1?: EngineResult;
+    engine2?: EngineResult;
+    engine3?: EngineResult;
+    engine4?: EngineResult;
+    engine5?: EngineResult;
+  };
+  scoring?: {
+    enginesUsed: string[];
+    engineCount: number;
+    consensus?: number;
+  };
   factors: string[];
   recommendation: string;
+}
+
+export interface EngineResult {
+  detected: boolean;
+  status: string;
+  score?: number;
+  confidence?: number;
+  source?: string;
+  stats?: any;
+  metadata?: any;
 }
 
 /**
@@ -291,11 +314,6 @@ export async function analyzeContent(url: URL): Promise<{
   });
 }
 
-// Helper function to sleep
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 /**
  * Enhanced threat database checking with detailed results
  */
@@ -519,7 +537,7 @@ export async function checkThreatDatabases(
     engineDetails.virusTotal = { status: "NOT_CONFIGURED" };
   }
 
-  // ENGINE 5: URLScan.io API (Enhanced with result polling)
+  // ENGINE 5: URLScan.io API (Submit only, no blocking)
   if (process.env.URLSCAN_API_KEY) {
     try {
       // Submit URL for scanning
@@ -544,96 +562,13 @@ export async function checkThreatDatabases(
         const uuid = submitData.uuid;
         console.log(`[ENGINE 5] URLScan.io: Scan submitted (UUID: ${uuid})`);
         
-        // Poll for results (max 3 attempts, 5 seconds apart)
-        let scanComplete = false;
-        let attempts = 0;
-        let resultData = null;
-        
-        while (!scanComplete && attempts < 3) {
-          attempts++;
-          await sleep(5000); // Wait 5 seconds before checking
-          
-          try {
-            const resultResponse = await fetch(
-              `https://urlscan.io/api/v1/result/${uuid}/`,
-              {
-                headers: {
-                  "API-Key": process.env.URLSCAN_API_KEY,
-                },
-                signal: AbortSignal.timeout(5000),
-              }
-            );
-            
-            if (resultResponse.ok) {
-              resultData = await resultResponse.json();
-              scanComplete = true;
-              console.log(`[ENGINE 5] URLScan.io: Results retrieved successfully`);
-            } else if (resultResponse.status === 404) {
-              console.log(`[ENGINE 5] URLScan.io: Scan still processing (attempt ${attempts}/3)...`);
-            }
-          } catch (pollError) {
-            console.log(`[ENGINE 5] URLScan.io: Polling attempt ${attempts} failed`);
-          }
-        }
-        
-        if (resultData) {
-          // Extract detailed scan results
-          const verdict = resultData.verdicts?.overall || {};
-          const page = resultData.page || {};
-          const stats = resultData.stats || {};
-          const meta = resultData.meta?.processors || {};
-          
-          engineDetails.urlScan = {
-            status: verdict.malicious ? "MALICIOUS" : verdict.score > 0 ? "SUSPICIOUS" : "CLEAN",
-            uuid: uuid,
-            scanUrl: `https://urlscan.io/result/${uuid}/`,
-            verdict: {
-              score: verdict.score || 0,
-              malicious: verdict.malicious || false,
-              categories: verdict.categories || [],
-              brands: verdict.brands || [],
-            },
-            page: {
-              url: page.url,
-              domain: page.domain,
-              country: page.country,
-              city: page.city,
-              server: page.server,
-              ip: page.ip,
-              asn: page.asn,
-              asnname: page.asnname,
-            },
-            stats: {
-              uniqIPs: stats.uniqIPs || 0,
-              uniqCountries: stats.uniqCountries || 0,
-              dataLength: stats.dataLength || 0,
-              encodedDataLength: stats.encodedDataLength || 0,
-              requests: stats.requests || 0,
-            },
-            meta: {
-              processors: meta,
-            },
-            // Screenshot
-            screenshot: resultData.task?.screenshotURL,
-            // Technologies detected
-            technologies: page.technologies || [],
-            // Certificate info
-            tlsCertificate: page.tlsCertificate,
-          };
-          
-          if (verdict.malicious) {
-            databases.push("URLScan.io");
-            reportCount++;
-          }
-        } else {
-          // Scan still processing
-          engineDetails.urlScan = {
-            status: "PROCESSING",
-            message: "Scan submitted, results pending",
-            uuid: uuid,
-            scanUrl: `https://urlscan.io/result/${uuid}/`,
-          };
-        }
+        engineDetails.urlScan = {
+          status: "PROCESSING",
+          message: "Scan submitted, results pending",
+          uuid: uuid,
+          scanUrl: `https://urlscan.io/result/${uuid}/`,
+          apiUrl: `https://urlscan.io/api/v1/result/${uuid}/`,
+        };
       } else {
         const errorText = await submitResponse.text();
         console.error(`[ENGINE 5] URLScan.io API returned ${submitResponse.status}: ${errorText}`);
@@ -712,14 +647,115 @@ export async function scanUrl(
     throw new Error("Invalid URL format");
   }
 
-  // Perform all analyses
-  const [domainAnalysis, securityAnalysis, contentAnalysis, threatAnalysis] =
-    await Promise.all([
-      analyzeDomain(url),
-      analyzeSecurity(url),
-      analyzeContent(url),
-      checkThreatDatabases(urlString),
-    ]);
+  // Perform all analyses with Promise.allSettled for partial success
+  const results = await Promise.allSettled([
+    analyzeDomain(url),
+    analyzeSecurity(url),
+    analyzeContent(url),
+    checkThreatDatabases(urlString),
+  ]);
+
+  // Extract successful results
+  const domainAnalysis = results[0].status === 'fulfilled' ? results[0].value : { name: url.hostname, reputation: 'unknown' };
+  const securityAnalysis = results[1].status === 'fulfilled' ? results[1].value : { hasHttps: false, hasSsl: false };
+  const contentAnalysis = results[2].status === 'fulfilled' ? results[2].value : {};
+  const threatAnalysis = results[3].status === 'fulfilled' ? results[3].value : { databases: [], reportCount: 0, engineDetails: {} };
+
+  // Track which engines succeeded
+  const successfulEngines: string[] = ['engine1']; // Local ML always present
+  let partial = false;
+
+  // Check external engines status
+  const engineDetails = threatAnalysis.engineDetails || {};
+  const externalEnginesAvailable = [
+    engineDetails.googleSafeBrowsing?.status !== 'NOT_CONFIGURED',
+    engineDetails.phishTank?.status !== 'NOT_CONFIGURED',
+    engineDetails.virusTotal?.status !== 'NOT_CONFIGURED',
+    engineDetails.urlScan?.status !== 'NOT_CONFIGURED'
+  ].filter(Boolean).length;
+
+  const externalEnginesSucceeded = [
+    engineDetails.googleSafeBrowsing?.status === 'THREAT_DETECTED' || engineDetails.googleSafeBrowsing?.status === 'CLEAN',
+    engineDetails.phishTank?.status === 'PHISHING_DETECTED' || engineDetails.phishTank?.status === 'CLEAN',
+    engineDetails.virusTotal?.status === 'MALICIOUS' || engineDetails.virusTotal?.status === 'SUSPICIOUS' || engineDetails.virusTotal?.status === 'CLEAN',
+    engineDetails.urlScan?.status === 'PROCESSING' || engineDetails.urlScan?.status === 'CLEAN' || engineDetails.urlScan?.status === 'MALICIOUS'
+  ].filter(Boolean).length;
+
+  // Mark as partial if less than 50% of external engines succeeded
+  if (externalEnginesAvailable > 0 && externalEnginesSucceeded < externalEnginesAvailable / 2) {
+    partial = true;
+  }
+
+  // Normalize engine results for frontend
+  const engines: any = {
+    engine1: {
+      detected: localScore !== undefined && localScore > 50,
+      status: localScore !== undefined && localScore > 70 ? 'DANGER' : localScore && localScore > 40 ? 'WARNING' : 'SAFE',
+      score: localScore || 0,
+      confidence: 0.8,
+      source: 'local_ml'
+    }
+  };
+
+  // Engine 2: Google Safe Browsing
+  if (engineDetails.googleSafeBrowsing && engineDetails.googleSafeBrowsing.status !== 'NOT_CONFIGURED') {
+    successfulEngines.push('engine2');
+    engines.engine2 = {
+      detected: engineDetails.googleSafeBrowsing.status === 'THREAT_DETECTED',
+      status: engineDetails.googleSafeBrowsing.status,
+      source: 'google_safe_browsing',
+      metadata: {
+        threatCount: engineDetails.googleSafeBrowsing.threatCount || 0
+      }
+    };
+  }
+
+  // Engine 3: PhishTank
+  if (engineDetails.phishTank && engineDetails.phishTank.status !== 'NOT_CONFIGURED') {
+    successfulEngines.push('engine3');
+    engines.engine3 = {
+      detected: engineDetails.phishTank.status === 'PHISHING_DETECTED',
+      status: engineDetails.phishTank.status,
+      source: 'phishtank',
+      metadata: {
+        inDatabase: engineDetails.phishTank.inDatabase,
+        verified: engineDetails.phishTank.verified
+      }
+    };
+  }
+
+  // Engine 4: VirusTotal
+  if (engineDetails.virusTotal && engineDetails.virusTotal.status !== 'NOT_CONFIGURED') {
+    successfulEngines.push('engine4');
+    engines.engine4 = {
+      detected: engineDetails.virusTotal.malicious > 0,
+      status: engineDetails.virusTotal.status,
+      score: engineDetails.virusTotal.total > 0 ? Math.round((engineDetails.virusTotal.malicious / engineDetails.virusTotal.total) * 100) : 0,
+      source: 'virustotal',
+      stats: {
+        malicious: engineDetails.virusTotal.malicious || 0,
+        suspicious: engineDetails.virusTotal.suspicious || 0,
+        harmless: engineDetails.virusTotal.harmless || 0,
+        undetected: engineDetails.virusTotal.undetected || 0,
+        total: engineDetails.virusTotal.total || 0
+      }
+    };
+  }
+
+  // Engine 5: URLScan.io
+  if (engineDetails.urlScan && engineDetails.urlScan.status !== 'NOT_CONFIGURED') {
+    successfulEngines.push('engine5');
+    engines.engine5 = {
+      detected: engineDetails.urlScan.status === 'MALICIOUS',
+      status: engineDetails.urlScan.status,
+      source: 'urlscan',
+      metadata: {
+        uuid: engineDetails.urlScan.uuid,
+        scanUrl: engineDetails.urlScan.scanUrl,
+        apiUrl: engineDetails.urlScan.apiUrl
+      }
+    };
+  }
 
   // Calculate cloud score
   const cloudScore = calculateCloudScore(
@@ -782,7 +818,8 @@ export async function scanUrl(
       "✅ SAFE: This URL appears to be safe based on our analysis. However, always exercise caution online.";
   }
 
-  const confidence = Math.min(
+  // Adjust confidence if partial scan
+  let confidence = Math.min(
     0.95,
     0.5 +
       (threatAnalysis.reportCount > 0 ? 0.3 : 0) +
@@ -790,10 +827,15 @@ export async function scanUrl(
       (factors.length > 3 ? 0.15 : 0)
   );
 
+  if (partial) {
+    confidence = Math.min(confidence, 0.6);
+  }
+
   return {
     status,
     score: combinedScore,
     confidence,
+    partial,
     verdict: {
       isSafe: status === "safe",
       isPhishing: status === "danger" && factors.some((f) => f.includes("phish")),
@@ -811,7 +853,16 @@ export async function scanUrl(
         combinedScore,
         model: "PhishGuard-v1.0",
       },
-      threat: threatAnalysis,
+      threat: {
+        databases: threatAnalysis.databases,
+        reportCount: threatAnalysis.reportCount
+      },
+    },
+    engines,
+    scoring: {
+      enginesUsed: successfulEngines,
+      engineCount: successfulEngines.length,
+      consensus: Math.round((successfulEngines.length / 5) * 100)
     },
     factors,
     recommendation,
