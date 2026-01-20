@@ -6,10 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { uuid: string } }
+  { params }: { params: Promise<{ uuid: string }> }
 ) {
   try {
-    const { uuid } = params;
+    const { uuid } = await params;
 
     if (!uuid) {
       return NextResponse.json(
