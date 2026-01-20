@@ -62,6 +62,8 @@ export async function checkRateLimit(
         current: 1,
       };
     }
+    // If still null after fetch, something went wrong
+    throw new Error('Failed to create or fetch rate limit record');
   }
 
   // check if window expired
