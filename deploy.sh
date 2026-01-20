@@ -5,6 +5,11 @@ echo "🚀 Deploy started..."
 
 cd /var/www/html/mahmud/phishguard_web
 
+echo "🔄 Resetting to latest version..."
+git fetch origin main
+git reset --hard origin/main
+chmod +x deploy.sh
+
 echo "📥 Pulling latest code..."
 git pull origin main
 
