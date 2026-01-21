@@ -234,27 +234,7 @@ async function checkUrlScan(): Promise<ApiEndpointStatus> {
   }
 }
 
-async function checkGoogleSafeBrowsing(): Promise<ApiEndpointStatus> {
-  const hasGoogleKey = !!process.env.GOOGLE_SAFE_BROWSING_KEY;
 
-  if (!hasGoogleKey) {
-    return {
-      name: "Google Safe Browsing",
-      endpoint: "External API",
-      status: "degraded",
-      lastChecked: new Date(),
-      message: "API key not configured",
-    };
-  }
-
-  return {
-    name: "Google Safe Browsing",
-    endpoint: "External API",
-    status: "operational",
-    lastChecked: new Date(),
-    message: "API key configured",
-  };
-}
 
 function checkConfiguration() {
   const database: ConfigCheck[] = [
@@ -338,12 +318,6 @@ function checkConfiguration() {
       configured: !!process.env.URLSCAN_API_KEY,
       value: process.env.URLSCAN_API_KEY ? "***" : undefined,
       status: process.env.URLSCAN_API_KEY ? "valid" : "missing",
-    },
-    {
-      name: "Google Safe Browsing Key",
-      configured: !!process.env.GOOGLE_SAFE_BROWSING_KEY,
-      value: process.env.GOOGLE_SAFE_BROWSING_KEY ? "***" : undefined,
-      status: process.env.GOOGLE_SAFE_BROWSING_KEY ? "valid" : "missing",
     },
   ];
 
@@ -454,7 +428,6 @@ export async function GET(request: NextRequest) {
       githubOAuthStatus,
       virusTotalStatus,
       urlScanStatus,
-      safeBrowsingStatus,
       statistics,
     ] = await Promise.all([
       checkMongoDBStatus(),
@@ -463,7 +436,6 @@ export async function GET(request: NextRequest) {
       checkGitHubOAuth(),
       checkVirusTotal(),
       checkUrlScan(),
-      checkGoogleSafeBrowsing(),
       getSystemStatistics(),
     ]);
 
@@ -471,7 +443,7 @@ export async function GET(request: NextRequest) {
 
     const coreServices = [mongoStatus, emailStatus];
     const authServices = [googleOAuthStatus, githubOAuthStatus];
-    const externalServices = [virusTotalStatus, urlScanStatus, safeBrowsingStatus];
+    const externalServices = [virusTotalStatus, urlScanStatus];
 
     // Calculate overall status
     const allServices = [...coreServices, ...authServices, ...externalServices];

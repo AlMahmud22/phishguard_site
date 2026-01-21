@@ -129,15 +129,27 @@ export async function POST(req: NextRequest) {
     // Perform the scan
     let scanResult;
     try {
+      console.log(`[API /url/check] Starting scan for URL: ${url}`);
+      console.log(`[API /url/check] Local score: ${localScore}, Context: ${context}`);
       scanResult = await scanUrl(url, localScore, localFactors);
+      console.log(`[API /url/check] Scan completed successfully:`, {
+        status: scanResult.status,
+        score: scanResult.score,
+        enginesUsed: scanResult.scoring?.enginesUsed
+      });
     } catch (error: any) {
+      console.error(`[API /url/check] Scan failed for ${url}:`, error);
+      console.error(`[API /url/check] Error stack:`, error.stack);
+      
       await Log.create({
         userId: user._id,
         action: "url_scan_failed",
-        details: {
-          url,
+        details: `Scan failed for ${url}: ${error.message}`,
+        metadata: {
+          url: url,
           error: error.message,
-          userAgent,
+          errorStack: error.stack,
+          userAgent: userAgent || 'Unknown',
         },
         ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         timestamp: new Date(),
@@ -168,6 +180,8 @@ export async function POST(req: NextRequest) {
       confidence: scanResult.confidence,
       verdict: scanResult.verdict,
       analysis: scanResult.analysis,
+      engines: scanResult.engines,
+      scoring: scanResult.scoring,
       factors: scanResult.factors,
       recommendation: scanResult.recommendation,
       localScore,
@@ -182,13 +196,15 @@ export async function POST(req: NextRequest) {
     await Log.create({
       userId: user._id,
       action: "url_scan",
-      details: {
-        scanId,
-        url,
+      details: `Scanned ${url} - Status: ${scanResult.status}, Score: ${scanResult.score}%`,
+      metadata: {
+        scanId: scanId,
+        url: url,
         status: scanResult.status,
         score: scanResult.score,
-        context,
-        userAgent,
+        context: context || 'manual',
+        userAgent: userAgent || 'Unknown',
+        enginesUsed: scanResult.scoring?.enginesUsed || []
       },
       ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
       timestamp: new Date(),

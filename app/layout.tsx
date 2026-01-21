@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://phish.tnpx.tech",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://phish.tnpx.tech",
     siteName: "PhishGuard",
     title: "PhishGuard - Advanced Phishing Detection System",
     description: "Protect yourself from phishing attacks with PhishGuard's intelligent URL scanning and real-time threat detection.",

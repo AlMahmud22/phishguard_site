@@ -325,6 +325,10 @@ export async function checkThreatDatabases(
   reportCount: number;
   engineDetails?: any;
 }> {
+  console.log(`[checkThreatDatabases] Starting threat database checks for: ${url}`);
+  console.log(`[checkThreatDatabases] VirusTotal API Key: ${process.env.VIRUSTOTAL_API_KEY ? 'CONFIGURED' : 'NOT CONFIGURED'}`);
+  console.log(`[checkThreatDatabases] URLScan API Key: ${process.env.URLSCAN_API_KEY ? 'CONFIGURED' : 'NOT CONFIGURED'}`);
+  
   const databases: string[] = [];
   let reportCount = 0;
   const engineDetails: any = {};
@@ -346,42 +350,113 @@ export async function checkThreatDatabases(
 
       if (response.ok) {
         const data = await response.json();
-        const stats = data.data?.attributes?.last_analysis_stats || {};
+        const attrs = data.data?.attributes || {};
+        const stats = attrs.last_analysis_stats || {};
         const malicious = stats.malicious || 0;
         const suspicious = stats.suspicious || 0;
         const undetected = stats.undetected || 0;
         const harmless = stats.harmless || 0;
-        const total = malicious + suspicious + undetected + harmless;
+        const timeout = stats.timeout || 0;
+        const total = malicious + suspicious + undetected + harmless + timeout;
+        
+        // Extract ALL vendor results for detailed display
+        const vendorResults: any[] = [];
+        const analysisResults = attrs.last_analysis_results || {};
+        for (const [vendorName, result] of Object.entries(analysisResults)) {
+          const vendorData: any = result;
+          vendorResults.push({
+            engine: vendorName,
+            category: vendorData.category || 'undetected',
+            result: vendorData.result || 'clean',
+            method: vendorData.method || '',
+            engineName: vendorData.engine_name || vendorName,
+            engineVersion: vendorData.engine_version || '',
+            engineUpdate: vendorData.engine_update || '',
+          });
+        }
+        
+        // Extract categorization from multiple sources
+        const categories = attrs.categories || {};
+        const categoriesList: any[] = [];
+        for (const [source, category] of Object.entries(categories)) {
+          categoriesList.push({ source, category });
+        }
+        
+        // Extract HTML metadata
+        const htmlMeta = attrs.html_meta || {};
+        const htmlMetadata = {
+          title: attrs.title || htmlMeta.title || '',
+          description: htmlMeta.description || '',
+          keywords: htmlMeta.keywords || '',
+          charset: htmlMeta.charset || '',
+          language: htmlMeta.language || '',
+          favicon: attrs.favicon ? {
+            dhash: attrs.favicon.dhash,
+            rawMd5: attrs.favicon.raw_md5,
+          } : null,
+        };
+        
+        // Extract domain & URL metadata
+        const urlParts = new URL(url);
+        const domainMetadata = {
+          domain: urlParts.hostname,
+          subdomain: urlParts.hostname.split('.').length > 2 ? urlParts.hostname.split('.').slice(0, -2).join('.') : '',
+          tld: urlParts.hostname.split('.').pop() || '',
+          reputation: attrs.reputation || 0,
+          timesSubmitted: attrs.times_submitted || 0,
+        };
         
         // Extract detailed information
         engineDetails.virusTotal = {
           status: malicious > 0 ? "MALICIOUS" : suspicious > 0 ? "SUSPICIOUS" : "CLEAN",
+          
+          // 1. URL Overview
+          submittedUrl: url,
+          normalizedUrl: attrs.url || url,
+          lastFinalUrl: attrs.last_final_url || url,
+          urlStatus: malicious > 0 ? 'malicious' : suspicious > 0 ? 'suspicious' : harmless > 0 ? 'clean' : 'unknown',
+          firstSubmissionDate: attrs.first_submission_date,
+          lastAnalysisDate: attrs.last_analysis_date,
+          lastSubmissionDate: attrs.last_submission_date,
+          lastModificationDate: attrs.last_modification_date,
+          
+          // 2. Detection Summary
           analysisStats: stats,
           malicious,
           suspicious,
           undetected,
           harmless,
+          timeout,
           total,
-          categories: data.data?.attributes?.categories || {},
-          lastAnalysisDate: data.data?.attributes?.last_analysis_date,
-          lastSubmissionDate: data.data?.attributes?.last_submission_date,
-          reputation: data.data?.attributes?.reputation || 0,
-          totalVotes: data.data?.attributes?.total_votes || {},
-          // HTTP response details
-          lastHttpResponseCode: data.data?.attributes?.last_http_response_code,
-          lastHttpResponseHeaders: data.data?.attributes?.last_http_response_headers,
-          lastHttpResponseContentLength: data.data?.attributes?.last_http_response_content_length,
-          lastHttpResponseContentSha256: data.data?.attributes?.last_http_response_content_sha256,
-          // HTML metadata
-          title: data.data?.attributes?.title,
-          favicon: data.data?.attributes?.favicon,
-          // Redirection
-          lastFinalUrl: data.data?.attributes?.last_final_url,
-          redirectionChain: data.data?.attributes?.redirection_chain || [],
-          // Trackers
-          trackers: data.data?.attributes?.trackers || {},
-          // Tags
-          tags: data.data?.attributes?.tags || [],
+          reputation: attrs.reputation || 0,
+          totalVotes: attrs.total_votes || { harmless: 0, malicious: 0 },
+          
+          // 3. Security Vendor Results (ALL VENDORS)
+          vendorResults: vendorResults,
+          totalVendors: vendorResults.length,
+          
+          // 4. URL Categorization
+          categories: categoriesList,
+          
+          // 5. HTML Metadata
+          htmlMetadata: htmlMetadata,
+          
+          // 6. Domain & URL Metadata
+          domainMetadata: domainMetadata,
+          
+          // 7. Historical Context
+          timesSubmitted: attrs.times_submitted || 0,
+          
+          // Additional details
+          lastHttpResponseCode: attrs.last_http_response_code,
+          lastHttpResponseHeaders: attrs.last_http_response_headers || {},
+          lastHttpResponseContentLength: attrs.last_http_response_content_length,
+          lastHttpResponseContentSha256: attrs.last_http_response_content_sha256,
+          redirectionChain: attrs.redirection_chain || [],
+          trackers: attrs.trackers || {},
+          tags: attrs.tags || [],
+          outgoingLinks: attrs.outgoing_links || 0,
+          incomingLinks: attrs.incoming_links || 0,
         };
         
         if (malicious > 0) {
@@ -434,10 +509,11 @@ export async function checkThreatDatabases(
     engineDetails.virusTotal = { status: "NOT_CONFIGURED" };
   }
 
-  // ENGINE 3: URLScan.io API (Submit only, no blocking)
+  // ENGINE 3: URLScan.io API (Enhanced with full data extraction)
   if (process.env.URLSCAN_API_KEY) {
     try {
-      // Submit URL for scanning
+      // Step 1: Submit URL for scanning
+      console.log(`[ENGINE 3] URLScan.io: Submitting URL for scan...`);
       const submitResponse = await fetch(
         "https://urlscan.io/api/v1/scan/",
         {
@@ -454,26 +530,402 @@ export async function checkThreatDatabases(
         }
       );
 
-      if (submitResponse.ok) {
+      if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        console.error(`[ENGINE 3] URLScan.io API returned ${submitResponse.status}: ${errorText}`);
+        engineDetails.urlScan = { status: "ERROR", error: errorText };
+      } else {
         const submitData = await submitResponse.json();
         const uuid = submitData.uuid;
         console.log(`[ENGINE 3] URLScan.io: Scan submitted (UUID: ${uuid})`);
         
-        engineDetails.urlScan = {
-          status: "PROCESSING",
-          message: "Scan submitted, results pending",
-          uuid: uuid,
-          scanUrl: `https://urlscan.io/result/${uuid}/`,
-          apiUrl: `https://urlscan.io/api/v1/result/${uuid}/`,
-        };
-      } else {
-        const errorText = await submitResponse.text();
-        console.error(`[ENGINE 3] URLScan.io API returned ${submitResponse.status}: ${errorText}`);
-        engineDetails.urlScan = { status: "ERROR", error: errorText };
+        // Step 2: Poll for results (max 6 attempts with 5-second delays = 30 seconds total)
+        let attempts = 0;
+        let resultData: any = null;
+        const maxAttempts = 6;
+        const pollDelay = 5000; // 5 seconds
+        
+        while (attempts < maxAttempts && !resultData) {
+          attempts++;
+          console.log(`[ENGINE 3] URLScan.io: Waiting ${pollDelay/1000}s before checking results (attempt ${attempts}/${maxAttempts})...`);
+          
+          // Wait before polling
+          await new Promise(resolve => setTimeout(resolve, pollDelay));
+          
+          try {
+            const resultResponse = await fetch(
+              `https://urlscan.io/api/v1/result/${uuid}/`,
+              {
+                headers: {
+                  "API-Key": process.env.URLSCAN_API_KEY,
+                },
+                signal: AbortSignal.timeout(10000),
+              }
+            );
+            
+            if (resultResponse.ok) {
+              resultData = await resultResponse.json();
+              console.log(`[ENGINE 3] URLScan.io: Results retrieved successfully on attempt ${attempts}`);
+              break;
+            } else if (resultResponse.status === 404) {
+              console.log(`[ENGINE 3] URLScan.io: Scan still processing (attempt ${attempts}/${maxAttempts})...`);
+              // Continue polling
+            } else {
+              const errorText = await resultResponse.text();
+              console.error(`[ENGINE 3] URLScan.io: Result fetch failed ${resultResponse.status}: ${errorText}`);
+              break;
+            }
+          } catch (pollError: any) {
+            console.error(`[ENGINE 3] URLScan.io: Polling attempt ${attempts} error:`, pollError.message);
+            // Continue to next attempt unless it's the last one
+            if (attempts === maxAttempts) {
+              break;
+            }
+          }
+        }
+        
+        // Step 3: Extract and structure the data
+        if (!resultData) {
+          // Scan still processing after all attempts
+          console.warn(`[ENGINE 3] URLScan.io: Scan still processing after ${maxAttempts} attempts`);
+          engineDetails.urlScan = {
+            status: "PROCESSING",
+            message: "Scan in progress - results pending",
+            uuid: uuid,
+            scanUrl: `https://urlscan.io/result/${uuid}/`,
+            apiUrl: `https://urlscan.io/api/v1/result/${uuid}/`,
+            attempts: attempts,
+          };
+        } else {
+          // Successfully retrieved results - extract ALL data
+          const verdict = resultData.verdicts?.overall || {};
+          const page = resultData.page || {};
+          const task = resultData.task || {};
+          const stats = resultData.stats || {};
+          const lists = resultData.lists || {};
+          const meta = resultData.meta || {};
+          const data = resultData.data || {};
+          
+          const isMalicious = verdict.malicious || false;
+          const verdictScore = verdict.score || 0;
+          const categories = verdict.categories || [];
+          const brands = verdict.brands || [];
+          const tags = verdict.tags || [];
+          
+          // Extract ALL information from task
+          const taskInfo = {
+            uuid: uuid,
+            visibility: task.visibility || 'unlisted',
+            method: task.method || 'api',
+            time: task.time,
+            source: task.source || 'api',
+            url: task.url || url,
+            userAgent: task.userAgent,
+            reportURL: task.reportURL || `https://urlscan.io/result/${uuid}/`,
+            screenshotURL: task.screenshotURL || null,
+            domURL: task.domURL || null,
+          };
+          
+          // Extract page metadata with ALL fields
+          const pageInfo = {
+            url: page.url || url,
+            domain: page.domain,
+            subdomain: page.subdomain || '',
+            apexDomain: page.apexDomain || page.domain,
+            country: page.country,
+            city: page.city,
+            ip: page.ip,
+            ipv6: page.ipv6 || '',
+            asn: page.asn,
+            asnname: page.asnname,
+            server: page.server,
+            ptr: page.ptr || '',
+            redirected: page.redirected || null,
+            status: page.status || '',
+            mimeType: page.mimeType || '',
+            title: page.title || '',
+            favicon: {
+              hash: page.faviconHash || '',
+              mimeType: page.faviconMimeType || '',
+            },
+            umbrellaRank: page.umbrellaRank || null,
+            technologies: Array.isArray(page.technologies) 
+              ? page.technologies.map((tech: any) => typeof tech === 'string' ? tech : tech.name || String(tech))
+              : [],
+          };
+          
+          // Extract SSL/TLS certificate with ALL fields
+          const certificate = page.tlsCertificate ? {
+            issuer: page.tlsCertificate.issuer,
+            subject: page.tlsCertificate.subject,
+            subjectName: page.tlsCertificate.subjectName,
+            sanList: page.tlsCertificate.sanList || [],
+            validFrom: page.tlsCertificate.validFrom,
+            validTo: page.tlsCertificate.validTo,
+            serialNumber: page.tlsCertificate.serialNumber,
+            signatureAlgorithm: page.tlsCertificate.signatureAlgorithm,
+            publicKeyAlgorithm: page.tlsCertificate.publicKeyAlgorithm,
+            pubkeyBitsize: page.tlsCertificate.pubkeyBitsize,
+          } : null;
+          
+          // Extract network statistics with ALL data
+          const networkStats = {
+            requests: stats.requests || 0,
+            domains: stats.domains || 0,
+            ips: stats.ips || 0,
+            ipv4: stats.ipv4 || 0,
+            ipv6: stats.ipv6 || 0,
+            countries: stats.countries || 0,
+            dataLength: stats.dataLength || 0,
+            encodedDataLength: stats.encodedDataLength || 0,
+            compressionRatio: stats.compressionRatio || 0,
+            uniqCountries: stats.uniqCountries || 0,
+            totalLinks: stats.totalLinks || 0,
+            malicious: stats.malicious || 0,
+            adBlocked: stats.adBlocked || 0,
+            IPv6Percentage: stats.IPv6Percentage || 0,
+            resourceStats: stats.resourceStats || [],
+            protocolStats: stats.protocolStats || [],
+            tlsStats: stats.tlsStats || [],
+            serverStats: stats.serverStats || [],
+            regDomainStats: stats.regDomainStats || [],
+          };
+          
+          // Extract ALL lists for comprehensive analysis
+          const extractedLists = {
+            // IP addresses contacted
+            ips: (lists.ips || []).map((ip: any) => ({
+              ip: ip,
+              asn: lists.asns?.find((a: any) => a.ip === ip) || null,
+            })),
+            
+            // All domains contacted
+            domains: lists.domains || [],
+            
+            // Countries involved
+            countries: lists.countries || [],
+            
+            // All URLs with FULL details
+            urls: (lists.urls || []).map((u: any) => ({
+              url: u,
+              // Find matching request in data.requests for full details
+            })),
+            
+            // ASN information
+            asns: lists.asns || [],
+            
+            // Hashes (resources)
+            hashes: lists.hashes || [],
+            
+            // Certificates
+            certificates: lists.certificates || [],
+            
+            // Servers
+            servers: lists.servers || [],
+            
+            // Links found on page
+            linkDomains: lists.linkDomains || [],
+          };
+          
+          // Extract FULL network request/response data
+          const requests = (data.requests || []).map((req: any) => ({
+            requestId: req.request?.requestId,
+            url: req.request?.url || req.url,
+            method: req.request?.method,
+            headers: req.request?.headers || {},
+            postData: req.request?.postData,
+            
+            // Response data
+            status: req.response?.status,
+            statusText: req.response?.statusText,
+            responseHeaders: req.response?.headers || {},
+            mimeType: req.response?.mimeType,
+            remoteIPAddress: req.response?.remoteIPAddress,
+            remotePort: req.response?.remotePort,
+            protocol: req.response?.protocol,
+            securityState: req.response?.securityState,
+            
+            // Resource info
+            type: req.type || req.resourceType,
+            size: req.size || req.encodedDataLength,
+            dataLength: req.dataLength,
+            encodedDataLength: req.encodedDataLength,
+            
+            // Timing
+            time: req.time,
+            initiator: req.initiator?.type,
+          }));
+          
+          // Extract console messages (JavaScript errors/warnings)
+          const consoleMessages = Array.isArray(data.console) 
+            ? data.console.map((msg: any) => ({
+                type: msg.message?.level || msg.type,
+                source: msg.message?.source,
+                text: msg.message?.text || msg.message,
+                url: msg.message?.url,
+                line: msg.message?.line,
+                column: msg.message?.column,
+              }))
+            : [];
+          
+          // Extract cookies with ALL attributes
+          const cookies = Array.isArray(data.cookies)
+            ? data.cookies.map((cookie: any) => ({
+                name: cookie.name,
+                value: cookie.value,
+                domain: cookie.domain,
+                path: cookie.path,
+                expires: cookie.expires,
+                httpOnly: cookie.httpOnly,
+                secure: cookie.secure,
+                sameSite: cookie.sameSite,
+                session: cookie.session,
+              }))
+            : [];
+          
+          // Extract DOM snapshot & iframes
+          const domInfo = {
+            totalIframes: (lists.hashes || []).filter((h: any) => h.type === 'iframe').length,
+            iframes: (lists.hashes || [])
+              .filter((h: any) => h.type === 'iframe')
+              .map((h: any) => ({
+                url: h.filename,
+                hash: h.hash,
+              })),
+            totalScripts: (lists.hashes || []).filter((h: any) => h.type === 'script').length,
+            scripts: (lists.hashes || [])
+              .filter((h: any) => h.type === 'script')
+              .map((h: any) => ({
+                url: h.filename,
+                hash: h.hash,
+              })),
+          };
+          
+          // Extract behavior indicators
+          const behaviorIndicators = {
+            hasIframes: domInfo.totalIframes > 0,
+            hasObfuscatedJS: (lists.hashes || []).some((h: any) => h.obfuscated),
+            hasDataExfiltration: requests.some((r: any) => r.method === 'POST'),
+            hasRedirects: page.redirected ? true : false,
+            redirectChain: page.redirected || [],
+            hasAutoDownload: requests.some((r: any) => 
+              r.responseHeaders?.['content-disposition']?.includes('attachment')
+            ),
+            hasFormSubmission: requests.some((r: any) => 
+              r.method === 'POST' && r.type === 'Document'
+            ),
+            hasSuspiciousExtensions: requests.some((r: any) =>
+              r.url?.match(/\.(exe|zip|rar|7z|dmg|pkg|apk|bat|cmd|ps1|vbs)$/i)
+            ),
+          };
+          
+          // Extract meta information
+          const metaInfo = {
+            processors: meta.processors || {},
+          };
+          
+          engineDetails.urlScan = {
+            status: isMalicious ? "MALICIOUS" : verdictScore > 0.5 ? "SUSPICIOUS" : "CLEAN",
+            message: isMalicious 
+              ? `Malicious content detected (${categories.join(', ')})`
+              : verdictScore > 0.5
+              ? `Suspicious behavior detected (Score: ${Math.round(verdictScore * 100)}%)`
+              : "No malicious behavior detected",
+            
+            // 1. Scan Overview (from task)
+            task: taskInfo,
+            
+            // 2. Page Summary
+            page: pageInfo,
+            
+            // 3. Screenshot
+            screenshot: taskInfo.screenshotURL,
+            domSnapshot: taskInfo.domURL,
+            
+            // 4. Page Infrastructure
+            infrastructure: {
+              ip: pageInfo.ip,
+              ipv6: pageInfo.ipv6,
+              asn: pageInfo.asn,
+              asnName: pageInfo.asnname,
+              country: pageInfo.country,
+              city: pageInfo.city,
+              server: pageInfo.server,
+              ptr: pageInfo.ptr,
+            },
+            
+            // 5. SSL/TLS Certificate
+            certificate: certificate,
+            
+            // 6. Network Activity (ALL requests with full details)
+            network: {
+              stats: networkStats,
+              requests: requests,
+            },
+            
+            // 7. JavaScript & Resources
+            javascript: {
+              totalScripts: domInfo.totalScripts,
+              scripts: domInfo.scripts,
+              consoleMessages: consoleMessages,
+            },
+            
+            // 8. DOM & Content
+            dom: {
+              totalIframes: domInfo.totalIframes,
+              iframes: domInfo.iframes,
+            },
+            
+            // 9. Cookies & Storage
+            cookies: {
+              total: cookies.length,
+              details: cookies,
+            },
+            
+            // 10. Behavior Indicators
+            behavior: behaviorIndicators,
+            
+            // 11. Extracted Intelligence Lists
+            lists: extractedLists,
+            
+            // 12. Security Signals
+            verdict: {
+              malicious: isMalicious,
+              score: verdictScore,
+              categories: categories,
+              brands: brands,
+              tags: tags,
+              hasSecurityFlags: categories.length > 0 || brands.length > 0 || tags.length > 0,
+            },
+            
+            // 13. Technologies Detected
+            technologies: pageInfo.technologies,
+            
+            // Processing metadata
+            meta: metaInfo,
+            processingTime: attempts * pollDelay,
+            attempts: attempts,
+          };
+          
+          // Update threat databases if malicious
+          if (isMalicious) {
+            databases.push("URLScan.io");
+            reportCount += 1;
+            console.log(`[ENGINE 3] URLScan.io detected: MALICIOUS (Categories: ${categories.join(', ')}, Score: ${Math.round(verdictScore * 100)}%)`);
+          } else if (verdictScore > 0.5) {
+            console.log(`[ENGINE 3] URLScan.io: SUSPICIOUS (Score: ${Math.round(verdictScore * 100)}%)`);
+          } else {
+            console.log(`[ENGINE 3] URLScan.io: CLEAN (Score: ${Math.round(verdictScore * 100)}%)`);
+          }
+        }
       }
     } catch (error: any) {
       console.error("[ENGINE 3] URLScan.io check failed:", error);
-      engineDetails.urlScan = { status: "ERROR", error: error.message };
+      engineDetails.urlScan = { 
+        status: "ERROR", 
+        error: error.message,
+        errorType: error.name === 'AbortError' ? 'Timeout' : 'Network Error'
+      };
     }
   } else {
     console.warn("[ENGINE 3] URLScan.io API key not configured");
@@ -539,24 +991,41 @@ export async function scanUrl(
 ): Promise<ScanResult> {
   const startTime = Date.now();
   
+  console.log(`[scanUrl] Starting scan for: ${urlString}`);
+  console.log(`[scanUrl] Local score: ${localScore}, Local factors: ${localFactors?.length || 0}`);
+  
   const url = validateUrl(urlString);
   if (!url) {
     throw new Error("Invalid URL format");
   }
 
   // Perform all analyses with Promise.allSettled for partial success
+  console.log(`[scanUrl] Running parallel analyses...`);
   const results = await Promise.allSettled([
     analyzeDomain(url),
     analyzeSecurity(url),
     analyzeContent(url),
     checkThreatDatabases(urlString),
   ]);
+  
+  console.log(`[scanUrl] Parallel analyses complete:`, {
+    domain: results[0].status,
+    security: results[1].status,
+    content: results[2].status,
+    threatDatabases: results[3].status
+  });
 
   // Extract successful results
   const domainAnalysis = results[0].status === 'fulfilled' ? results[0].value : { name: url.hostname, reputation: 'unknown' };
   const securityAnalysis = results[1].status === 'fulfilled' ? results[1].value : { hasHttps: false, hasSsl: false };
   const contentAnalysis = results[2].status === 'fulfilled' ? results[2].value : {};
   const threatAnalysis = results[3].status === 'fulfilled' ? results[3].value : { databases: [], reportCount: 0, engineDetails: {} };
+  
+  // Log any failures
+  if (results[0].status === 'rejected') console.error('[scanUrl] Domain analysis failed:', results[0].reason);
+  if (results[1].status === 'rejected') console.error('[scanUrl] Security analysis failed:', results[1].reason);
+  if (results[2].status === 'rejected') console.error('[scanUrl] Content analysis failed:', results[2].reason);
+  if (results[3].status === 'rejected') console.error('[scanUrl] Threat database check failed:', results[3].reason);
 
   // Track which engines succeeded
   const successfulEngines: string[] = ['engine1']; // Local ML always present
@@ -593,33 +1062,28 @@ export async function scanUrl(
   // Engine 2: VirusTotal
   if (engineDetails.virusTotal && engineDetails.virusTotal.status !== 'NOT_CONFIGURED') {
     successfulEngines.push('engine2');
+    // Spread all VirusTotal data directly into engine2 for comprehensive display
     engines.engine2 = {
       detected: engineDetails.virusTotal.malicious > 0,
       status: engineDetails.virusTotal.status,
       score: engineDetails.virusTotal.total > 0 ? Math.round((engineDetails.virusTotal.malicious / engineDetails.virusTotal.total) * 100) : 0,
       source: 'virustotal',
-      stats: {
-        malicious: engineDetails.virusTotal.malicious || 0,
-        suspicious: engineDetails.virusTotal.suspicious || 0,
-        harmless: engineDetails.virusTotal.harmless || 0,
-        undetected: engineDetails.virusTotal.undetected || 0,
-        total: engineDetails.virusTotal.total || 0
-      }
+      // Flatten all VirusTotal data to root level for ScanDetailsView
+      ...engineDetails.virusTotal,
     };
   }
 
   // Engine 3: URLScan.io
   if (engineDetails.urlScan && engineDetails.urlScan.status !== 'NOT_CONFIGURED') {
     successfulEngines.push('engine3');
+    // Spread all URLScan data directly into engine3 for comprehensive display
     engines.engine3 = {
       detected: engineDetails.urlScan.status === 'MALICIOUS',
       status: engineDetails.urlScan.status,
       source: 'urlscan',
-      metadata: {
-        uuid: engineDetails.urlScan.uuid,
-        scanUrl: engineDetails.urlScan.scanUrl,
-        apiUrl: engineDetails.urlScan.apiUrl
-      }
+      message: engineDetails.urlScan.message,
+      // Flatten all URLScan data to root level for ScanDetailsView
+      ...engineDetails.urlScan,
     };
   }
 
@@ -705,7 +1169,7 @@ export async function scanUrl(
     verdict: {
       isSafe: status === "safe",
       isPhishing: status === "danger" && factors.some((f) => f.includes("phish")),
-      isMalware: threatAnalysis.databases.includes("Google Safe Browsing"),
+      isMalware: threatAnalysis.databases.includes("VirusTotal"),
       isSpam: false,
       category: status === "danger" ? "malicious" : status === "warning" ? "suspicious" : "legitimate",
     },
@@ -721,7 +1185,8 @@ export async function scanUrl(
       },
       threat: {
         databases: threatAnalysis.databases,
-        reportCount: threatAnalysis.reportCount
+        reportCount: threatAnalysis.reportCount,
+        engineDetails: engineDetails // Include full engine details with all URLScan data
       },
     },
     engines,

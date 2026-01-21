@@ -21,8 +21,6 @@ export async function GET(req: NextRequest) {
     const capabilities = {
       engines: {
         engine1: true, // Core ML always available (client-side)
-        google: !!process.env.GOOGLE_SAFE_BROWSING_API_KEY,
-        phishtank: !!process.env.PHISHTANK_API_KEY,
         virustotal: !!process.env.VIRUSTOTAL_API_KEY,
         urlscan: !!process.env.URLSCAN_API_KEY,
       },

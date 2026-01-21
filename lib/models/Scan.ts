@@ -46,7 +46,14 @@ export interface IScan extends Document {
       databases: string[];
       lastReported?: Date;
       reportCount: number;
+      engineDetails?: any;
     };
+  };
+  engines?: any;
+  scoring?: {
+    enginesUsed: string[];
+    engineCount: number;
+    consensus: number;
   };
   factors: string[];
   recommendation: string;
@@ -133,7 +140,16 @@ const ScanSchema = new Schema<IScan>(
         databases: [{ type: String }],
         lastReported: { type: Date },
         reportCount: { type: Number, required: true },
+        // Store complete engine details from external APIs
+        engineDetails: { type: Schema.Types.Mixed },
       },
+    },
+    // Store normalized engine results for easy access
+    engines: { type: Schema.Types.Mixed },
+    scoring: {
+      enginesUsed: [{ type: String }],
+      engineCount: { type: Number },
+      consensus: { type: Number },
     },
     factors: [{ type: String }],
     recommendation: {

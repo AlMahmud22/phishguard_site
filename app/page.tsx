@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import DownloadSection from "@/components/DownloadSection";
 
 /// Ultra-modern home page with animations and multiple sections
 export default function Home() {
@@ -499,6 +500,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Download Desktop App Section */}
+      <DownloadSection />
 
       {/* Technology Stack */}
       <section className="py-32 bg-gradient-to-b from-gray-50 to-white">
