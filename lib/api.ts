@@ -48,8 +48,15 @@ export const scanUrl = async (url: string) => {
   return response.data;
 };
 
-export const fetchScanHistory = async () => {
-  const response = await api.get("/url/history");
+export const fetchScanHistory = async (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}) => {
+  const response = await api.get("/url/history", { params });
   return response.data;
 };
 

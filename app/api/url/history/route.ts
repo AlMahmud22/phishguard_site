@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAuth } from "@/lib/authMiddleware";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
 import Scan from "@/lib/models/Scan";
@@ -11,23 +10,13 @@ import Scan from "@/lib/models/Scan";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to view scan history",
-        },
-        { status: 401 }
-      );
-    }
+    // Check authentication - supports JWT, desktop key, and NextAuth sessions
+    const authUser = await requireAuth(req);
 
     await dbConnect();
 
     // Get user
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(authUser.id);
     if (!user) {
       return NextResponse.json(
         {

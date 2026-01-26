@@ -180,12 +180,16 @@ export default function Home() {
               ) : (
                 <>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      href="/register"
-                      className="group px-10 py-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-lg transition-colors"
+                    <a
+                      href="/api/download-app"
+                      download
+                      className="group px-10 py-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center gap-2"
                     >
-                      <span>Start Protecting Now</span>
-                    </Link>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      <span>Download Now</span>
+                    </a>
                   </motion.div>
 
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -678,22 +682,22 @@ export default function Home() {
             </motion.svg>
             
             <h2 className="text-5xl md:text-7xl font-black mb-8">
-              Ready to Get Protected?
+              Start Protecting Now
             </h2>
             <p className="text-2xl md:text-3xl mb-12 max-w-3xl mx-auto text-white/90 leading-relaxed">
-              Join thousands of users who trust PhishGuard to keep them safe from phishing attacks
+              Create your account and download the desktop app to get real-time protection against phishing attacks
             </p>
             
-            <motion.div
+            <motion.div className="flex flex-col sm:flex-row gap-4 justify-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Link
-                href="/register"
+                href="/dashboard"
                 className="inline-block px-12 py-6 bg-white text-primary-700 rounded-2xl font-black text-xl hover:bg-gray-50 transition-all shadow-2xl hover:shadow-white/20"
               >
                 <span className="flex items-center gap-3">
-                  Start Your Free Trial
+                  Sign In
                   <motion.span
                     animate={{ x: [0, 5, 0] }}
                     transition={{ duration: 1, repeat: Infinity }}
@@ -703,28 +707,39 @@ export default function Home() {
                 </span>
               </Link>
             </motion.div>
-            
-            <p className="mt-8 text-white/80">No credit card required • 14-day free trial • Cancel anytime</p>
           </motion.div>
         </div>
+      </section>
 
-        {/* Animated Orbs */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute top-10 right-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-        ></motion.div>
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            rotate: [360, 180, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-        ></motion.div>
+      {/* Download Section */}
+      <DownloadSection />
+
+      {/* Stats Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-primary-600 dark:text-primary-400 mb-4 flex justify-center">
+                  {stat.icon}
+                </div>
+                <div className="text-4xl font-black text-gray-900 dark:text-white mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-gray-600 dark:text-gray-400 font-semibold">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
     </div>
   );

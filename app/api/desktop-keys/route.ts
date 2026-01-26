@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { requireAuth } from '@/lib/authMiddleware';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 import { nanoid } from 'nanoid';
@@ -12,18 +11,11 @@ import bcrypt from 'bcryptjs';
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'You must be logged in' },
-        { status: 401 }
-      );
-    }
+    const authUser = await requireAuth(req);
     
     await dbConnect();
     
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(authUser.id);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -59,14 +51,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'You must be logged in' },
-        { status: 401 }
-      );
-    }
+    const authUser = await requireAuth(req);
     
     const body = await req.json();
     const { name } = body;
@@ -80,16 +65,7 @@ export async function POST(req: NextRequest) {
     
     await dbConnect();
     
-    const user = await User.findOne({ email: session.user.email });
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Limit to 5 active keys per user
-    const activeKeys = (user.desktopAppKeys || []).filter(k => k.isActive);
+    const user = await User.findById(authUser.id);
     if (activeKeys.length >= 5) {
       return NextResponse.json(
         { 
@@ -146,14 +122,7 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'You must be logged in' },
-        { status: 401 }
-      );
-    }
+    const authUser = await requireAuth(req);
     
     const { searchParams } = new URL(req.url);
     const keyId = searchParams.get('id');
@@ -167,7 +136,7 @@ export async function DELETE(req: NextRequest) {
     
     await dbConnect();
     
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(authUser.id);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },

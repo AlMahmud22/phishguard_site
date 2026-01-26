@@ -33,7 +33,11 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json();
-    const { url, localScore, localFactors, context, userAgent } = body;
+    const { url, localResult, context, userAgent } = body;
+    
+    // Extract local score from full Engine 1 result (new) or legacy format (backward compat)
+    const localScore = localResult?.score || (body.localScore !== undefined ? body.localScore : undefined);
+    const localFactors = localResult?.factors || body.localFactors || [];
 
     if (!url || typeof url !== "string") {
       return NextResponse.json(
@@ -131,7 +135,7 @@ export async function POST(req: NextRequest) {
     try {
       console.log(`[API /url/check] Starting scan for URL: ${url}`);
       console.log(`[API /url/check] Local score: ${localScore}, Context: ${context}`);
-      scanResult = await scanUrl(url, localScore, localFactors);
+      scanResult = await scanUrl(url, localScore, localFactors, localResult);
       console.log(`[API /url/check] Scan completed successfully:`, {
         status: scanResult.status,
         score: scanResult.score,

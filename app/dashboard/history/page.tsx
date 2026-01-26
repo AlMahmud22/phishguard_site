@@ -34,8 +34,8 @@ export default function HistoryPage() {
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        /// fetch user scan history from backend
-        const response = await fetchScanHistory();
+        /// fetch user scan history from backend with higher limit to get all scans
+        const response = await fetchScanHistory({ page: 1, limit: 500 });
         
         if (response.success && response.data?.scans) {
           setHistory(response.data.scans);

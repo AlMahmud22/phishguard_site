@@ -987,7 +987,8 @@ export function calculateCloudScore(
 export async function scanUrl(
   urlString: string,
   localScore?: number,
-  localFactors?: string[]
+  localFactors?: string[],
+  localEngineResult?: any
 ): Promise<ScanResult> {
   const startTime = Date.now();
   
@@ -1050,13 +1051,24 @@ export async function scanUrl(
 
   // Normalize engine results for frontend
   const engines: any = {
-    engine1: {
-      detected: localScore !== undefined && localScore > 50,
-      status: localScore !== undefined && localScore > 70 ? 'DANGER' : localScore && localScore > 40 ? 'WARNING' : 'SAFE',
-      score: localScore || 0,
-      confidence: 0.8,
-      source: 'local_ml'
-    }
+    engine1: localEngineResult 
+      ? {
+          ...localEngineResult,
+          detected: localEngineResult.score !== undefined && localEngineResult.score > 50,
+          status: localEngineResult.score !== undefined && localEngineResult.score > 70 
+            ? 'DANGER' 
+            : localEngineResult.score && localEngineResult.score > 40 
+            ? 'WARNING' 
+            : 'SAFE',
+          source: 'local_ml'
+        }
+      : {
+          detected: localScore !== undefined && localScore > 50,
+          status: localScore !== undefined && localScore > 70 ? 'DANGER' : localScore && localScore > 40 ? 'WARNING' : 'SAFE',
+          score: localScore || 0,
+          confidence: 0.8,
+          source: 'local_ml'
+        }
   };
 
   // Engine 2: VirusTotal
