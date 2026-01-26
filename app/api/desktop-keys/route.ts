@@ -66,6 +66,15 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     
     const user = await User.findById(authUser.id);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Check active keys limit
+    const activeKeys = (user.desktopAppKeys || []).filter((k: any) => k.isActive);
     if (activeKeys.length >= 5) {
       return NextResponse.json(
         { 
