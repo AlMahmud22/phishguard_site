@@ -5,6 +5,8 @@ import SetupFile from "@/lib/models/SetupFile";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import { validateFileUpload, validatePEHeader, sanitizeVersion, sanitizeFilename } from "@/lib/validation";
+import { FILE_UPLOAD } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,10 +38,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file type (only .exe allowed)
-    if (!file.name.endsWith(".exe")) {
+    // Validate file metadata (extension, MIME type, size)
+    const fileValidation = validateFileUpload(file, FILE_UPLOAD.MAX_SETUP_FILE_SIZE);
+    if (!fileValidation.valid) {
       return NextResponse.json(
-        { success: false, message: "Only .exe files are allowed" },
+        { success: false, message: fileValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize version to prevent directory traversal
+    const safeVersion = sanitizeVersion(version);
+    if (!safeVersion || !FILE_UPLOAD.ALLOWED_VERSION_PATTERN.test(safeVersion)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid version format. Use X.Y.Z format" },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer for content validation
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Validate PE header to ensure it's a real Windows executable
+    if (!validatePEHeader(buffer)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid executable file. File does not have a valid PE header" },
         { status: 400 }
       );
     }
@@ -50,14 +74,13 @@ export async function POST(req: NextRequest) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Generate unique filename
+    // Generate unique, sanitized filename
     const timestamp = Date.now();
-    const filename = `PhishGuard-Setup-${timestamp}.exe`;
+    const sanitizedOriginalName = sanitizeFilename(file.name);
+    const filename = `PhishGuard-Setup-${safeVersion}-${timestamp}.exe`;
     const filePath = path.join(uploadsDir, filename);
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Save file (buffer already created during PE header validation)
     await writeFile(filePath, buffer);
 
     // Connect to database
@@ -69,10 +92,10 @@ export async function POST(req: NextRequest) {
     // Create new setup file record
     const setupFile = new SetupFile({
       filename,
-      originalName: file.name,
+      originalName: sanitizedOriginalName,
       fileSize: file.size,
       filePath: `/uploads/setup/${filename}`,
-      version,
+      version: safeVersion,
       uploadedBy: session.user.id,
       isActive: true,
       downloadCount: 0,

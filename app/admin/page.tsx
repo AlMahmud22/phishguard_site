@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import AdminUsersTable from "@/components/AdminUsersTable";
 import AdminLogsTable from "@/components/AdminLogsTable";
 import EmailTestPanel from "@/components/EmailTestPanel";
 import SetupFileManager from "@/components/SetupFileManager";
-import { motion } from "framer-motion";
+
+const FloatingShapes = dynamic(() => import("@/components/three/FloatingShapes"), { ssr: false });
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -16,7 +19,7 @@ export default function AdminPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -33,179 +36,192 @@ export default function AdminPage() {
   }
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "users", label: "Users", icon: "👥" },
-    { id: "logs", label: "Activity Logs", icon: "📝" },
-    { id: "setup", label: "Setup Files", icon: "💿" },
-    { id: "email", label: "Email", icon: "📧" },
+    { id: "overview", label: "Overview" },
+    { id: "users", label: "Users" },
+    { id: "logs", label: "Activity Logs" },
+    { id: "setup", label: "Setup Files" },
+    { id: "email", label: "Email" },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage users, monitor system activity, upload setup files, and configure settings
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="space-y-8">
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-5xl font-black text-gray-900 mb-3 tracking-tight">
+              Admin <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Dashboard</span>
+            </h1>
+            <p className="text-xl text-gray-600">
+              Manage users, monitor system activity, and configure settings
+            </p>
+          </motion.div>
 
-        {/* Admin Info Card */}
-        <div className="card mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Welcome, Admin!</h2>
-              <p className="text-sm text-gray-600">
-                You have full administrative access to the PhishGuard system.
-              </p>
+          <motion.div 
+            className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-200"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">Welcome, Admin</h2>
+                <p className="text-gray-600">
+                  Manage your PhishGuard system from this dashboard
+                </p>
+              </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Role:</strong> {session.user.role}
-              </p>
-              <p className="text-sm text-blue-800">
-                <strong>Email:</strong> {session.user.email}
-              </p>
+          </motion.div>
+
+          <div className="mb-8">
+            <div className="bg-white rounded-xl shadow-md p-2 border border-gray-200">
+              <nav className="flex space-x-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex-1 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200
+                      ${
+                        activeTab === tab.id
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
             </div>
           </div>
-        </div>
-
-        {/* Tabs Navigation */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 overflow-x-auto">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                    ${
-                      activeTab === tab.id
-                        ? "border-blue-600 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }
-                  `}
-                >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
 
         {/* Tab Content */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div>
           {activeTab === "overview" && (
-            <div className="space-y-8">
-              {/* Quick Stats */}
+            <motion.div 
+              className="space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-600">Total Users</h3>
-                    <span className="text-2xl">👥</span>
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900">Loading...</p>
-                  <p className="text-xs text-gray-500 mt-1">Registered accounts</p>
-                </div>
-
-                <div className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-600">Total Scans</h3>
-                    <span className="text-2xl">🔍</span>
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900">Loading...</p>
-                  <p className="text-xs text-gray-500 mt-1">Performed today</p>
-                </div>
-
-                <div className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-600">Threats Blocked</h3>
-                    <span className="text-2xl">🛡️</span>
-                  </div>
-                  <p className="text-3xl font-bold text-red-600">Loading...</p>
-                  <p className="text-xs text-gray-500 mt-1">Malicious URLs detected</p>
-                </div>
-
-                <div className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-600">System Health</h3>
-                    <span className="text-2xl">💚</span>
-                  </div>
-                  <p className="text-3xl font-bold text-green-600">Healthy</p>
-                  <p className="text-xs text-gray-500 mt-1">All systems operational</p>
-                </div>
+                {[
+                  { label: "Total Users", value: "Loading...", subtext: "Registered accounts", color: "blue",  icon: "👥" },
+                  { label: "Total Scans", value: "Loading...", subtext: "Performed today", color: "green", icon: "🔍" },
+                  { label: "Threats Blocked", value: "Loading...", subtext: "Malicious URLs detected", color: "red", icon: "🛡️" },
+                  { label: "System Health", value: "Healthy", subtext: "All systems operational", color: "purple", icon: "✅" }
+                ].map((stat, i) => (
+                  <motion.div
+                    key={i}
+                    className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                    whileHover={{ y: -5 }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-gray-600">{stat.label}</h3>
+                      <span className="text-2xl">{stat.icon}</span>
+                    </div>
+                    <p className={`text-4xl font-black mb-2 ${
+                      stat.color === 'blue' ? 'text-blue-600' :
+                      stat.color === 'green' ? 'text-green-600' :
+                      stat.color === 'red' ? 'text-red-600' : 'text-purple-600'
+                    }`}>
+                      {stat.value}
+                    </p>
+                    <p className="text-xs text-gray-500">{stat.subtext}</p>
+                  </motion.div>
+                ))}
               </div>
 
-              {/* System Actions */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="card">
-                  <h3 className="font-semibold mb-2">📊 System Analytics</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    View detailed reports and statistics
-                  </p>
-                  <button className="btn-primary text-sm">View Analytics</button>
-                </div>
-
-                <div className="card">
-                  <h3 className="font-semibold mb-2">⚙️ Configuration</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Manage system settings and API keys
-                  </p>
-                  <button className="btn-primary text-sm">Configure System</button>
-                </div>
-
-                <div className="card">
-                  <h3 className="font-semibold mb-2">📧 Email Reports</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Send weekly reports manually
-                  </p>
-                  <button className="btn-primary text-sm">Trigger Reports</button>
-                </div>
+                {[
+                  { title: "System Analytics", desc: "View detailed reports and statistics", action: "View Analytics", color: "blue" },
+                  { title: "Configuration", desc: "Manage system settings and API keys", action: "Configure System", color: "purple" },
+                  { title: "Email Reports", desc: "Send weekly reports manually", action: "Trigger Reports", color: "green" }
+                ].map((card, i) => (
+                  <motion.div
+                    key={i}
+                    className="bg-white rounded-xl shadow-md p-8 border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}
+                  >
+                    <h3 className="text-xl font-bold mb-3 text-gray-900">{card.title}</h3>
+                    <p className="text-gray-600 mb-6">{card.desc}</p>
+                    <button className={`w-full px-6 py-3 ${
+                      card.color === 'blue' ? 'bg-blue-600 hover:bg-blue-700' :
+                      card.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-green-600 hover:bg-green-700'
+                    } text-white rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200`}>{card.action}</button>
+                  </motion.div>
+                ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === "users" && (
-            <div className="card">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">User Management</h2>
-                <p className="text-sm text-gray-600">
+            <motion.div 
+              className="bg-white rounded-2xl shadow-md p-8 border border-gray-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">User Management</h2>
+                <p className="text-gray-600">
                   View and manage all registered users, modify roles, and monitor account status
                 </p>
               </div>
               <AdminUsersTable />
-            </div>
+            </motion.div>
           )}
 
           {activeTab === "logs" && (
-            <div className="card">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Recent Activity</h2>
-                <p className="text-sm text-gray-600">
-                  Monitor system-wide activity and user actions
+            <motion.div 
+              className="bg-white rounded-2xl shadow-md p-8 border border-gray-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">Activity Logs</h2>
+                <p className="text-gray-600">
+                  Monitor system activity and user actions
                 </p>
               </div>
               <AdminLogsTable />
-            </div>
+            </motion.div>
           )}
 
           {activeTab === "setup" && (
-            <SetupFileManager />
+            <motion.div 
+              className="bg-white rounded-2xl shadow-md p-8 border border-gray-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <SetupFileManager />
+            </motion.div>
           )}
 
           {activeTab === "email" && (
-            <EmailTestPanel />
+            <motion.div
+              className="bg-white rounded-2xl shadow-md p-8 border border-gray-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <EmailTestPanel />
+            </motion.div>
           )}
-        </motion.div>
+        </div>
+        </div>
       </div>
     </div>
   );

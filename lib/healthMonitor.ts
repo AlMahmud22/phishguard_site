@@ -3,6 +3,7 @@
  * Tracks service health, error rates, and sends alerts to admins
  */
 
+import mongoose from 'mongoose';
 import dbConnect from './db';
 import User from './models/User';
 import { sendEmail } from './email';
@@ -132,6 +133,12 @@ async function sendHealthAlert(metrics: HealthMetrics) {
   }
   
   try {
+    // Check if MongoDB is connected before querying
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('[HEALTH] MongoDB not connected, skipping health alert');
+      return;
+    }
+
     // Get all admin users
     const admins = await User.find({ role: 'admin', emailVerified: true });
     

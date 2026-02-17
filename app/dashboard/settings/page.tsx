@@ -67,12 +67,12 @@ export default function SettingsPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your preferences and account</p>
+          <h1 className="text-3xl font-black text-gray-900">Settings</h1>
+          <p className="text-gray-700 font-semibold mt-1">Manage your preferences and account</p>
         </div>
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card animate-pulse">
+            <div key={i} className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6 animate-pulse">
               <div className="h-48 bg-gray-200 rounded"></div>
             </div>
           ))}
@@ -86,13 +86,13 @@ export default function SettingsPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your preferences and account</p>
+          <h1 className="text-3xl font-black text-gray-900">Settings</h1>
+          <p className="text-gray-700 font-semibold mt-1">Manage your preferences and account</p>
         </div>
 
-        <div className="card text-center py-12">
+        <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-12 text-center">
           <svg
-            className="w-16 h-16 mx-auto mb-4 text-gray-400"
+            className="w-16 h-16 mx-auto mb-4 text-gray-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -105,8 +105,8 @@ export default function SettingsPage() {
             />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Settings</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Settings</h3>
+          <p className="text-gray-700 font-medium mb-4">
             {error || "There was a problem loading your settings. Please try again."}
           </p>
           <button
@@ -124,21 +124,21 @@ export default function SettingsPage() {
     <div className="max-w-4xl mx-auto">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your preferences and account</p>
+        <h1 className="text-3xl font-black text-gray-900">Settings</h1>
+        <p className="text-gray-700 font-semibold mt-1">Manage your preferences and account</p>
       </div>
 
       {/* Settings form */}
       <SettingsForm settings={settings} onSave={handleSave} isLoading={isLoading} />
 
       {/* Account data management */}
-      <div className="card mt-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
+      <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6 mt-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Data Management</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Export Data</p>
-              <p className="text-sm text-gray-500">Download all your scan history and data</p>
+              <p className="font-semibold text-gray-900">Export Data</p>
+              <p className="text-base font-medium text-gray-700">Download all your scan history and data</p>
             </div>
             <button className="btn-secondary">
               Export
@@ -156,7 +156,7 @@ export default function SettingsPage() {
       )}
 
       {/* Last updated info */}
-      <div className="mt-6 text-center text-sm text-gray-500">
+      <div className="mt-6 text-center text-sm font-medium text-gray-600">
         Last updated: {new Date(settings.updatedAt).toLocaleString()}
       </div>
     </div>

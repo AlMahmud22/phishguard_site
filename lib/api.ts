@@ -2,7 +2,7 @@ import axios from "axios";
 import { getSession } from "next-auth/react";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   headers: {
     "Content-Type": "application/json",
   },
@@ -44,7 +44,7 @@ api.interceptors.response.use(
 
 // URL scanning functions
 export const scanUrl = async (url: string) => {
-  const response = await api.post("/url/scan", { url });
+  const response = await api.post("/scan", { url });
   return response.data;
 };
 
@@ -61,7 +61,7 @@ export const fetchScanHistory = async (params?: {
 };
 
 export const getScanDetails = async (scanId: string) => {
-  const response = await api.get(`/url/scan/${scanId}`);
+  const response = await api.get(`/scan/${scanId}`);
   return response.data;
 };
 

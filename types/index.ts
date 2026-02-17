@@ -61,7 +61,7 @@ export interface RegisterData {
 }
 
 /// Generic API response wrapper
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -133,6 +133,18 @@ export interface AdminUser {
   updatedAt: string;
 }
 
+/// Metadata for admin logs
+export interface LogMetadata {
+  scanId?: string;
+  url?: string;
+  error?: string;
+  duration?: number;
+  statusCode?: number;
+  method?: string;
+  endpoint?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 /// Admin - System log entry
 export interface AdminLog {
   id: string;
@@ -144,7 +156,7 @@ export interface AdminLog {
   ipAddress?: string;
   userAgent?: string;
   details: string;
-  metadata?: Record<string, any>;
+  metadata?: LogMetadata;
 }
 
 /// Admin - Rate limit statistics

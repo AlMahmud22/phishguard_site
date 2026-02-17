@@ -6,6 +6,9 @@ import User from "@/lib/models/User";
 import AppDownload from "@/lib/models/AppDownload";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
+import { validateFileUpload, validatePEHeader, sanitizeVersion, sanitizeFilename } from "@/lib/validation";
+import { FILE_UPLOAD } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/app/upload
@@ -71,31 +74,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file type (only .exe for Windows)
-    const validMimeTypes = [
-      "application/x-msdownload",
-      "application/octet-stream",
-      "application/x-msdos-program",
-    ];
-    if (!validMimeTypes.includes(file.type) && !file.name.endsWith(".exe")) {
+    // Validate file metadata (extension, MIME type, size)
+    const fileValidation = validateFileUpload(file, FILE_UPLOAD.MAX_APP_FILE_SIZE);
+    if (!fileValidation.valid) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid file type",
-          message: "Only .exe files are allowed",
+          error: "Invalid file",
+          message: fileValidation.error,
         },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 500MB)
-    const MAX_FILE_SIZE = 500 * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE) {
+    // Sanitize version to prevent directory traversal
+    const safeVersion = sanitizeVersion(version);
+    if (!safeVersion || !FILE_UPLOAD.ALLOWED_VERSION_PATTERN.test(safeVersion)) {
       return NextResponse.json(
         {
           success: false,
-          error: "File too large",
-          message: "File must be smaller than 500MB",
+          error: "Invalid version",
+          message: "Invalid version format. Use X.Y.Z format",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer for content validation
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Validate PE header to ensure it's a real Windows executable
+    if (!validatePEHeader(buffer)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid executable",
+          message: "Invalid executable file. File does not have a valid PE header",
         },
         { status: 400 }
       );
@@ -104,17 +119,17 @@ export async function POST(req: NextRequest) {
     // Create uploads directory in public folder
     const uploadsDir = path.join(process.cwd(), "public", "downloads");
     
-    // Generate unique filename
+    // Generate unique, sanitized filename
     const timestamp = Date.now();
-    const filename = `phishguard-${version}-${timestamp}.exe`;
+    const sanitizedOriginalName = sanitizeFilename(file.name);
+    const filename = `phishguard-${safeVersion}-${timestamp}.exe`;
     const filepath = path.join(uploadsDir, filename);
     const publicFilepath = `/downloads/${filename}`;
 
-    // Write file to disk
-    const bytes = await file.arrayBuffer();
-    await writeFile(filepath, Buffer.from(bytes));
+    // Write file to disk (buffer already created during PE header validation)
+    await writeFile(filepath, buffer);
 
-    console.log(`[App Upload] File saved to: ${filepath}`);
+    logger.info(`App upload: File saved to ${filepath}`);
 
     // Get current active download to mark as inactive
     const currentActive = await AppDownload.findOne({ active: true });
@@ -129,20 +144,20 @@ export async function POST(req: NextRequest) {
       // Try to delete old file (non-blocking)
       try {
         await unlink(path.join(process.cwd(), "public", previousFilepath.replace(/^\/?downloads\//, "downloads/")));
-        console.log(`[App Upload] Deleted old file: ${previousFilepath}`);
+        logger.info(`App upload: Deleted old file ${previousFilepath}`);
       } catch (error) {
-        console.warn(`[App Upload] Could not delete old file: ${error}`);
+        logger.warn(`App upload: Could not delete old file ${previousFilepath}`, { error });
       }
     }
 
     // Create new download record
     const appDownload = new AppDownload({
       filename,
-      originalFilename: file.name,
+      originalFilename: sanitizedOriginalName,
       filepath: publicFilepath,
       filesize: file.size,
       mimetype: file.type,
-      version,
+      version: safeVersion,
       releaseNotes: releaseNotes || "",
       uploadedBy: user._id,
       uploadedAt: new Date(),
@@ -153,7 +168,7 @@ export async function POST(req: NextRequest) {
 
     await appDownload.save();
 
-    console.log(`[App Upload] New version ${version} uploaded by ${user.email}`);
+    logger.info(`App upload: New version ${safeVersion} uploaded by ${user.email}`);
 
     return NextResponse.json(
       {
@@ -172,7 +187,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("[App Upload] Error:", error);
+    logger.error('App upload error', error);
     return NextResponse.json(
       {
         success: false,
@@ -240,7 +255,7 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("[App Upload GET] Error:", error);
+    logger.error('App upload GET error', error);
     return NextResponse.json(
       {
         success: false,

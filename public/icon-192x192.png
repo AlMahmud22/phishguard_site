@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="grad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#grad192)"/>
+  <path d="M96 48 L138 78 L138 114 L96 144 L54 114 L54 78 Z" fill="white" stroke="white" stroke-width="4" fill-opacity="0.2"/>
+  <circle cx="96" cy="96" r="18" fill="white"/>
+  <path d="M96 78 L96 60" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M114 87 L129 72" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M114 105 L129 120" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M96 114 L96 132" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M78 105 L63 120" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <path d="M78 87 L63 72" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <text x="96" y="175" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">PhishGuard</text>
+</svg>

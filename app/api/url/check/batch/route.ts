@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import validator from "validator";
+import pLimit from "p-limit";
+import { RATE_LIMITS, INPUT_LIMITS, SCAN_CONTEXTS } from "@/lib/constants";
 import { requireAuth } from "@/lib/authMiddleware";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
@@ -35,8 +38,9 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json();
-    const { urls, context, userAgent } = body;
+    let { urls, context, userAgent } = body;
 
+    // Validate URLs array
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
       return NextResponse.json(
         {
@@ -48,16 +52,60 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (urls.length > 50) {
+    // Enforce maximum batch size
+    if (urls.length > RATE_LIMITS.MAX_BATCH_SIZE) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid request",
-          message: "Maximum 50 URLs per batch request",
+          message: `Maximum ${RATE_LIMITS.MAX_BATCH_SIZE} URLs per batch request`,
         },
         { status: 400 }
       );
     }
+
+    // Validate and sanitize each URL
+    const sanitizedUrls: string[] = [];
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      if (!url || typeof url !== 'string') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid request",
+            message: `URL at index ${i} is invalid`,
+          },
+          { status: 400 }
+        );
+      }
+      
+      const urlToValidate = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+      if (!validator.isURL(urlToValidate, { require_protocol: false, require_valid_protocol: true })) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid request",
+            message: `URL at index ${i} has invalid format: ${url}`,
+          },
+          { status: 400 }
+        );
+      }
+      
+      sanitizedUrls.push(validator.trim(url));
+    }
+
+    // Sanitize optional parameters
+    if (context && typeof context === 'string') {
+      if (!SCAN_CONTEXTS.includes(context as any)) {
+        context = undefined; // Invalid context, ignore it
+      }
+    }
+    if (userAgent && typeof userAgent === 'string') {
+      userAgent = validator.escape(userAgent).substring(0, INPUT_LIMITS.MAX_USER_AGENT_LENGTH);
+    }
+
+    // Replace original urls with sanitized ones
+    urls = sanitizedUrls;
 
     // Check rate limits
     const now = new Date();
@@ -73,21 +121,21 @@ export async function POST(req: NextRequest) {
 
     // Rate limits
     const limits = user.isPremium
-      ? { hourly: 1000, daily: 10000, monthly: 100000 }
-      : { hourly: 100, daily: 500, monthly: 5000 };
+      ? RATE_LIMITS.PREMIUM
+      : RATE_LIMITS.FREE;
 
     const batchSize = urls.length;
 
-    if (hourlyCount + batchSize > limits.hourly) {
+    if (hourlyCount + batchSize > limits.HOURLY) {
       return NextResponse.json(
         {
           success: false,
           error: "Rate limit exceeded",
-          message: `Batch scan would exceed hourly limit (${limits.hourly} scans/hour)`,
+          message: `Batch scan would exceed hourly limit (${limits.HOURLY} scans/hour)`,
           limits: {
-            hourly: limits.hourly,
-            daily: limits.daily,
-            monthly: limits.monthly,
+            hourly: limits.HOURLY,
+            daily: limits.DAILY,
+            monthly: limits.MONTHLY,
             current: {
               hourly: hourlyCount,
               daily: dailyCount,
@@ -100,16 +148,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (dailyCount + batchSize > limits.daily) {
+    if (dailyCount + batchSize > limits.DAILY) {
       return NextResponse.json(
         {
           success: false,
           error: "Rate limit exceeded",
-          message: `Batch scan would exceed daily limit (${limits.daily} scans/day)`,
+          message: `Batch scan would exceed daily limit (${limits.DAILY} scans/day)`,
           limits: {
-            hourly: limits.hourly,
-            daily: limits.daily,
-            monthly: limits.monthly,
+            hourly: limits.HOURLY,
+            daily: limits.DAILY,
+            monthly: limits.MONTHLY,
             current: {
               hourly: hourlyCount,
               daily: dailyCount,
@@ -122,16 +170,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (monthlyCount + batchSize > limits.monthly) {
+    if (monthlyCount + batchSize > limits.MONTHLY) {
       return NextResponse.json(
         {
           success: false,
           error: "Rate limit exceeded",
-          message: `Batch scan would exceed monthly limit (${limits.monthly} scans/month)`,
+          message: `Batch scan would exceed monthly limit (${limits.MONTHLY} scans/month)`,
           limits: {
-            hourly: limits.hourly,
-            daily: limits.daily,
-            monthly: limits.monthly,
+            hourly: limits.HOURLY,
+            daily: limits.DAILY,
+            monthly: limits.MONTHLY,
             current: {
               hourly: hourlyCount,
               daily: dailyCount,
@@ -144,16 +192,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Scan all URLs in parallel
-    const scanPromises = urls.map(async (urlData: any) => {
-      const url = typeof urlData === "string" ? urlData : urlData.url;
-      const localScore = typeof urlData === "object" ? urlData.localScore : undefined;
-      const localFactors = typeof urlData === "object" ? urlData.localFactors : undefined;
+    // Scan all URLs with concurrency control
+    const limit = pLimit(RATE_LIMITS.MAX_CONCURRENT_SCANS);
+    
+    const scanPromises = urls.map((urlData: any) => 
+      limit(async () => {
+        const url = typeof urlData === "string" ? urlData : urlData.url;
+        const localScore = typeof urlData === "object" ? urlData.localScore : undefined;
+        const localFactors = typeof urlData === "object" ? urlData.localFactors : undefined;
 
-      try {
-        const scanResult = await scanUrl(url, localScore, localFactors);
-        const scanId = `scn_${Date.now()}_${nanoid(10)}`;
-        const timestamp = new Date();
+        try {
+          const scanResult = await scanUrl(url, localScore, localFactors);
+          const scanId = `scn_${Date.now()}_${nanoid(10)}`;
+          const timestamp = new Date();
 
         // Save scan to database
         await Scan.create({
@@ -193,7 +244,8 @@ export async function POST(req: NextRequest) {
           error: error.message || "Scan failed",
         };
       }
-    });
+    })
+    );
 
     const results = await Promise.all(scanPromises);
 

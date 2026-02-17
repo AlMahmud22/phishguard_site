@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { TIME_PERIODS, type TimePeriod } from "@/lib/constants";
+import { StatsQuerySchema, parseQuery } from "@/lib/validation";
 import { requireAuth } from "@/lib/authMiddleware";
 import dbConnect from "@/lib/db";
 import User from "@/lib/models/User";
@@ -23,17 +25,23 @@ export async function GET(req: NextRequest) {
       return ErrorResponses.notFound("User not found");
     }
 
-    // Get period parameter
+    // Get and validate period parameter
     const searchParams = req.nextUrl.searchParams;
-    const period = searchParams.get("period") || "all";
+    const queryValidation = parseQuery(StatsQuerySchema, searchParams);
+    
+    if (!queryValidation.success) {
+      return ErrorResponses.invalidRequest(queryValidation.error);
+    }
+    
+    const { period } = queryValidation.data;
 
     // Calculate date ranges based on period
     const now = new Date();
     let startDate: Date;
 
     switch (period) {
-      case "day":
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case "today":
+        startDate = new Date(now.setHours(0, 0, 0, 0));
         break;
       case "week":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

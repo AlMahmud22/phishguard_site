@@ -73,13 +73,11 @@ const ScanSchema = new Schema<IScan>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
     scanId: {
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     url: {
       type: String,
@@ -90,7 +88,6 @@ const ScanSchema = new Schema<IScan>(
       type: String,
       enum: ["safe", "warning", "danger"],
       required: true,
-      index: true,
     },
     score: {
       type: Number,
@@ -174,7 +171,6 @@ const ScanSchema = new Schema<IScan>(
       type: Date,
       required: true,
       default: Date.now,
-      index: true,
     },
     processingTime: {
       type: Number,

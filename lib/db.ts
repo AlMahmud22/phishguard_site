@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { DB_CONFIG } from "./constants";
+import { logger } from "./logger";
 
 // cache mongodb connection for serverless
 interface MongooseConnection {
@@ -18,7 +20,7 @@ async function connectToDatabase(): Promise<typeof mongoose> {
   if (cached.conn) {
     // Only show this in verbose mode to avoid spam
     if (process.env.VERBOSE_LOGS === 'true') {
-      console.log("✅ Using cached MongoDB connection");
+      logger.debug("Using cached MongoDB connection");
     }
     return cached.conn;
   }
@@ -33,10 +35,10 @@ async function connectToDatabase(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      maxPoolSize: 10,
-      minPoolSize: 2,
-      socketTimeoutMS: 45000,
-      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: DB_CONFIG.MAX_POOL_SIZE,
+      minPoolSize: DB_CONFIG.MIN_POOL_SIZE,
+      socketTimeoutMS: DB_CONFIG.SOCKET_TIMEOUT_MS,
+      serverSelectionTimeoutMS: DB_CONFIG.SERVER_SELECTION_TIMEOUT_MS,
       family: 4,
     };
 
@@ -54,18 +56,17 @@ async function connectToDatabase(): Promise<typeof mongoose> {
       // Fallback if URI parsing fails
     }
 
-    console.log(`🔄 Connecting to ${connectionInfo}...`);
+    logger.info(`Connecting to ${connectionInfo}...`);
     
     cached.promise = mongoose
       .connect(process.env.MONGODB_URI, opts)
       .then((mongoose) => {
-        console.log(`✅ Successfully connected to ${connectionInfo}`);
-        console.log(`   Connection pool: ${opts.minPoolSize}-${opts.maxPoolSize} connections`);
+        logger.info(`Successfully connected to ${connectionInfo}`);
+        logger.info(`Connection pool: ${opts.minPoolSize}-${opts.maxPoolSize} connections`);
         return mongoose;
       })
       .catch((error) => {
-        console.error(`❌ Failed to connect to ${connectionInfo}`);
-        console.error("   Error:", error.message);
+        logger.error(`Failed to connect to ${connectionInfo}`, error);
         cached.promise = null;
         throw error;
       });
@@ -87,7 +88,7 @@ if (process.env.NODE_ENV === "production") {
   process.on("SIGINT", async () => {
     if (cached.conn) {
       await cached.conn.connection.close();
-      console.log("🔌 MongoDB connection closed due to app termination");
+      logger.info("MongoDB connection closed due to app termination");
       process.exit(0);
     }
   });
@@ -106,6 +107,6 @@ export async function disconnectFromDatabase(): Promise<void> {
     await cached.conn.connection.close();
     cached.conn = null;
     cached.promise = null;
-    console.log("🔌 MongoDB connection closed");
+    logger.info("MongoDB connection closed");
   }
 }

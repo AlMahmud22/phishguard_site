@@ -56,7 +56,7 @@ function ResetPasswordForm() {
       color = "bg-green-500";
     } else if (score >= 3) {
       label = "Good";
-      color = "bg-yellow-500";
+      color = "bg-warning-500";
     } else if (score >= 2) {
       label = "Fair";
       color = "bg-orange-500";
@@ -194,7 +194,7 @@ function ResetPasswordForm() {
                         passwordStrength.score >= 4
                           ? "text-green-600"
                           : passwordStrength.score >= 3
-                          ? "text-yellow-600"
+                          ? "text-warning-600"
                           : "text-red-600"
                       }`}
                     >

@@ -2,6 +2,8 @@
 
 import type { ScanHistory } from "@/types";
 import { useState } from "react";
+import { X, AlertCircle } from "lucide-react";
+import EngineAnalysisTabs from "@/components/EngineAnalysisTabs";
 
 interface HistoryTableProps {
   history: any[];  // Using any temporarily to match API response
@@ -13,6 +15,9 @@ interface HistoryTableProps {
 export default function HistoryTable({ history, isLoading = false }: HistoryTableProps) {
   const [sortField, setSortField] = useState<string>("timestamp");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedScan, setSelectedScan] = useState<any | null>(null);
+  const [scanDetails, setScanDetails] = useState<any | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   /// sort history data by specified field
   const sortedHistory = [...history].sort((a, b) => {
@@ -40,6 +45,41 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
       setSortField(field);
       setSortOrder("desc");
     }
+  };
+
+  /// fetch and display scan details
+  const viewScanDetails = async (scanId: string) => {
+    setLoadingDetails(true);
+    try {
+      const response = await fetch(`/api/scan/${scanId}`);
+      const data = await response.json();
+      
+      console.log('=== SCAN DETAILS DEBUG ===');
+      console.log('Full Response:', JSON.stringify(data, null, 2));
+      console.log('Has engines?:', !!data.data?.engines);
+      console.log('Engine2 Data:', data.data?.engines?.engine2);
+      console.log('Engine3 Data:', data.data?.engines?.engine3);
+      console.log('Engine2 Available?:', data.data?.engines?.engine2?.available);
+      console.log('Engine3 Available?:', data.data?.engines?.engine3?.available);
+      console.log('========================');
+      
+      if (data.success && data.data) {
+        setScanDetails(data.data);
+        setSelectedScan(scanId);
+      } else {
+        console.error('Scan fetch failed:', data);
+      }
+    } catch (error) {
+      console.error('Failed to load scan details:', error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  /// close scan details modal
+  const closeDetails = () => {
+    setSelectedScan(null);
+    setScanDetails(null);
   };
 
   /// loading skeleton
@@ -149,7 +189,11 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sortedHistory.map((scan) => (
-            <tr key={scan.scanId} className="hover:bg-gray-50 transition-colors">
+            <tr 
+              key={scan.scanId} 
+              onClick={() => viewScanDetails(scan.scanId)}
+              className="hover:bg-blue-50 transition-colors cursor-pointer"
+            >
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
                   {scan.url}
@@ -195,6 +239,105 @@ export default function HistoryTable({ history, isLoading = false }: HistoryTabl
           ))}
         </tbody>
       </table>
+      
+      {/* Scan Details Modal */}
+      {selectedScan && scanDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={closeDetails}>
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-start z-10">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Scan Details</h2>
+                <p className="text-gray-600 break-all">{scanDetails.url}</p>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    scanDetails.status === 'danger' ? 'bg-red-100 text-red-800' :
+                    scanDetails.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {scanDetails.status === 'danger' ? 'Phishing Detected' :
+                     scanDetails.status === 'warning' ? 'Warning' : 'Safe'}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    Score: <span className="font-bold">{scanDetails.score}/100</span>
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    Confidence: <span className="font-bold">{(scanDetails.confidence * 100).toFixed(1)}%</span>
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={closeDetails}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6">
+              {scanDetails.engines?.engine2?.available && scanDetails.engines?.engine3?.available ? (
+                <EngineAnalysisTabs
+                  engine2={scanDetails.engines.engine2}
+                  engine3={scanDetails.engines.engine3}
+                />
+              ) : (scanDetails.engines?.engine2?.available || scanDetails.engines?.engine3?.available) ? (
+                <div className="space-y-6">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Partial analysis available. Some detection sources were unavailable during the scan.
+                    </p>
+                  </div>
+                  <EngineAnalysisTabs
+                    engine2={scanDetails.engines.engine2 || { available: false, processingTime: 0 }}
+                    engine3={scanDetails.engines.engine3 || { available: false, processingTime: 0 }}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                    <AlertCircle className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-900 font-semibold mb-2">Analysis Data Unavailable</p>
+                  <p className="text-gray-600 mb-4">Detailed scan analysis is not available for this result.</p>
+                  
+                  {scanDetails.recommendation && (
+                    <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6 text-left max-w-2xl mx-auto">
+                      <h3 className="font-semibold text-gray-900 mb-2">Recommendation</h3>
+                      <p className="text-gray-700">{scanDetails.recommendation}</p>
+                      
+                      {scanDetails.factors && scanDetails.factors.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Factors</h4>
+                          <ul className="list-disc list-inside text-gray-700 space-y-1">
+                            {scanDetails.factors.map((factor: string, index: number) => (
+                              <li key={index}>{factor}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-300">
+                        <p className="text-sm text-gray-600">
+                          💡 This scan may have incomplete data due to API limitations or service errors. 
+                          Try running a new scan for updated analysis.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Loading Modal */}
+      {loadingDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading scan details...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

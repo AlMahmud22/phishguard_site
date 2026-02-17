@@ -10,5 +10,6 @@
     },
     "editor.quickSuggestions": {
         "strings": true
-    }
+    },
+    "markdown.validate.enabled": false
 }

@@ -1,6 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+// Dynamically import ThreeJSIcon to avoid SSR issues
+const ThreeJSIcon = dynamic(() => import("@/components/ThreeJSIcon"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-16 h-16 mx-auto bg-blue-600/10 rounded-lg animate-pulse"></div>
+  ),
+});
 
 export default function DownloadSection() {
   const [downloading, setDownloading] = useState(false);
@@ -24,12 +33,12 @@ export default function DownloadSection() {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+    <section className="py-20 bg-gradient-to-b from-white via-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-block mb-6 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+          <div className="inline-block mb-6 p-3 bg-primary-500/10 rounded-full border border-primary-400/30 shadow-lg">
             <svg
-              className="w-8 h-8 text-blue-600 dark:text-blue-400"
+              className="w-8 h-8 text-primary-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -43,11 +52,11 @@ export default function DownloadSection() {
             </svg>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Download PhishGuard Desktop
           </h2>
           
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+          <p className="text-lg text-gray-700 mb-8">
             Get real-time phishing protection with our powerful desktop application. Monitor your clipboard, get instant threat alerts, and stay protected 24/7.
           </p>
 
@@ -55,7 +64,7 @@ export default function DownloadSection() {
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold rounded-lg transition-all shadow-lg shadow-primary-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:scale-105"
             >
               {downloading ? (
                 <>
@@ -102,7 +111,7 @@ export default function DownloadSection() {
 
             <a
               href="/register"
-              className="px-8 py-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-lg shadow-blue-500/50 flex items-center justify-center gap-2 hover:scale-105"
             >
               <svg
                 className="w-5 h-5"
@@ -121,59 +130,65 @@ export default function DownloadSection() {
             </a>
           </div>
 
-          {/* Features */}
+          {/* Features with Three.js 3D Icons */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-              <div className="text-2xl mb-2">⚡</div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-1">
+            <div className="glass-card p-6 rounded-lg hover:border-primary-500/50 transition-all group hover:scale-105">
+              <div className="mb-4">
+                <ThreeJSIcon type="cube" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2 text-lg">
                 Real-Time Scanning
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 Monitor clipboard automatically
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-              <div className="text-2xl mb-2">🛡️</div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-1">
+            <div className="glass-card p-6 rounded-lg hover:border-accent-500/50 transition-all group hover:scale-105">
+              <div className="mb-4">
+                <ThreeJSIcon type="shield" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2 text-lg">
                 3 AI Engines
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 Advanced threat detection
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-              <div className="text-2xl mb-2">📊</div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-1">
+            <div className="glass-card p-6 rounded-lg hover:border-primary-500/50 transition-all group hover:scale-105">
+              <div className="mb-4">
+                <ThreeJSIcon type="chart" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2 text-lg">
                 Scan History
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 Track all your scans
               </p>
             </div>
           </div>
 
           {/* System Requirements */}
-          <div className="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-left max-w-xl mx-auto">
-            <h4 className="font-bold text-gray-900 dark:text-white mb-3">
+          <div className="mt-12 p-6 glass-card rounded-lg text-left max-w-xl mx-auto">
+            <h4 className="font-bold text-gray-900 mb-3 text-lg">
               System Requirements
             </h4>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+            <ul className="text-sm text-gray-700 space-y-2">
               <li className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">✓</span>
+                <span className="text-primary-600 font-bold">✓</span>
                 Windows 10 or newer (64-bit)
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">✓</span>
+                <span className="text-primary-600 font-bold">✓</span>
                 100 MB free disk space
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">✓</span>
+                <span className="text-primary-600 font-bold">✓</span>
                 Administrator privileges
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400">✓</span>
+                <span className="text-primary-600 font-bold">✓</span>
                 Internet for cloud scanning
               </li>
             </ul>

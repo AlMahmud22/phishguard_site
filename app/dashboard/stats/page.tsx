@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import { fetchUserStats } from "@/lib/api";
 import type { UserStats, ApiResponse } from "@/types";
+import AnimatedIcon from "@/components/three/AnimatedIcon";
+import ParticlesBackground from "@/components/backgrounds/ParticlesBackground";
 
 /// dynamically import chart components with lazy loading for better performance
 /// these components use Recharts library which is heavy, so lazy loading improves initial page load
 const StatsChart = dynamic(() => import("@/components/StatsChart"), {
   loading: () => (
-    <div className="card">
+    <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6">
       <div className="animate-pulse">
         <div className="h-64 bg-gray-200 rounded"></div>
       </div>
@@ -27,7 +30,7 @@ const TopThreatsChart = dynamic(
     })),
   {
     loading: () => (
-      <div className="card">
+      <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6">
         <div className="animate-pulse">
           <div className="h-64 bg-gray-200 rounded"></div>
         </div>
@@ -95,17 +98,30 @@ export default function StatsPage() {
   /// loading state
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Statistics</h1>
-          <p className="text-gray-600 mt-1">Visual analytics and insights</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card animate-pulse">
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
-          ))}
+      <div className="min-h-screen bg-gray-50">
+        <ParticlesBackground variant="network" color="#3b82f6" />
+        <div className="max-w-7xl mx-auto relative z-10 px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <h1 className="text-5xl font-black text-gray-900 mb-2">Analytics</h1>
+            <p className="text-gray-700 text-lg font-semibold">Visual analytics and insights</p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6 animate-pulse"
+              >
+                <div className="h-64 bg-gray-200 rounded"></div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -114,155 +130,204 @@ export default function StatsPage() {
   /// error state
   if (error || !stats) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Statistics</h1>
-          <p className="text-gray-600 mt-1">Visual analytics and insights</p>
-        </div>
-
-        <div className="card text-center py-12">
-          <svg
-            className="w-16 h-16 mx-auto mb-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      <div className="min-h-screen bg-gray-50">
+        <ParticlesBackground variant="network" color="#3b82f6" />
+        <div className="max-w-7xl mx-auto relative z-10 px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Statistics Available</h3>
-          <p className="text-gray-600 mb-4">
-            {error || "You need to perform some scans first to see statistics. Install the desktop app to get started."}
-          </p>
-          <Link href="/" className="btn-primary">
-            Go to Home
-          </Link>
+            <h1 className="text-5xl font-black text-gray-900 mb-2">Analytics</h1>
+            <p className="text-gray-700 text-lg font-semibold">Visual analytics and insights</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-12 text-center"
+          >
+            <div className="w-16 h-16 mx-auto mb-4">
+              <AnimatedIcon type="shield" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No Statistics Available</h3>
+            <p className="text-gray-700 font-medium mb-4">
+              {error || "You need to perform some scans first to see statistics. Use the URL scanner to get started."}
+            </p>
+            <Link href="/" className="btn-primary">
+              Go to Home
+            </Link>
+          </motion.div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Statistics</h1>
-        <p className="text-gray-600 mt-1">Visual analytics and insights</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <ParticlesBackground variant="network" color="#3b82f6" />
+      
+      <div className="max-w-7xl mx-auto relative z-10 px-4 py-8">
+        {/* Page header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <h1 className="text-5xl font-black text-gray-900 mb-2">Analytics</h1>
+          <p className="text-gray-700 text-lg font-semibold">Visual analytics and insights</p>
+        </motion.div>
 
-      {/* Key metrics cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="card">
-          <p className="text-gray-600 text-sm">Total Scans</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalScans}</p>
-        </div>
-        <div className="card">
-          <p className="text-gray-600 text-sm">Phishing Detected</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">{stats.phishingDetected}</p>
-        </div>
-        <div className="card">
-          <p className="text-gray-600 text-sm">Safe URLs</p>
-          <p className="text-3xl font-bold text-green-600 mt-1">{stats.safeUrls}</p>
-        </div>
-        <div className="card">
-          <p className="text-gray-600 text-sm">Avg Confidence</p>
-          <p className="text-3xl font-bold text-blue-600 mt-1">
-            {(stats.averageConfidence * 100).toFixed(1)}%
-          </p>
-        </div>
-      </div>
-
-      {/* Main chart with type selector */}
-      <div className="card mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Scan Trends</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setChartType("line")}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                chartType === "line"
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Line
-            </button>
-            <button
-              onClick={() => setChartType("bar")}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                chartType === "bar"
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Bar
-            </button>
-            <button
-              onClick={() => setChartType("pie")}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                chartType === "pie"
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Pie
-            </button>
-          </div>
-        </div>
-        <StatsChart stats={stats} type={chartType} />
-      </div>
-
-      {/* Additional insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Top threats */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Threats</h2>
-          <TopThreatsChart threats={stats.topThreats} />
+        {/* Key metrics cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6 hover:shadow-lg transition-all"
+          >
+            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Total Scans</p>
+            <p className="text-4xl font-extrabold text-gray-900">{stats.totalScans}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6 hover:shadow-lg transition-all"
+          >
+            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Phishing Detected</p>
+            <p className="text-4xl font-extrabold text-red-600">{stats.phishingDetected}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6 hover:shadow-lg transition-all"
+          >
+            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Safe URLs</p>
+            <p className="text-4xl font-extrabold text-green-600">{stats.safeUrls}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6 hover:shadow-lg transition-all"
+          >
+            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Avg Confidence</p>
+            <p className="text-4xl font-extrabold text-blue-700">
+              {(stats.averageConfidence * 100).toFixed(1)}%
+            </p>
+          </motion.div>
         </div>
 
-        {/* Detection rate card */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Detection Rate</h2>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-gray-600">Phishing Detection</span>
-                <span className="text-sm font-medium">
-                  {((stats.phishingDetected / stats.totalScans) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-red-500 h-2 rounded-full"
-                  style={{ width: `${(stats.phishingDetected / stats.totalScans) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-gray-600">Safe URLs</span>
-                <span className="text-sm font-medium">
-                  {((stats.safeUrls / stats.totalScans) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-500 h-2 rounded-full"
-                  style={{ width: `${(stats.safeUrls / stats.totalScans) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Based on {stats.totalScans} total scans with an average confidence of{" "}
-                {(stats.averageConfidence * 100).toFixed(1)}%
-              </p>
+        {/* Main chart with type selector */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6 mb-8"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Scan Trends</h2>
+            <div className="flex space-x-2 bg-gray-100 rounded-xl p-1">
+              <button
+                onClick={() => setChartType("line")}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  chartType === "line"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+              >
+                Line
+              </button>
+              <button
+                onClick={() => setChartType("bar")}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  chartType === "bar"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+              >
+                Bar
+              </button>
+              <button
+                onClick={() => setChartType("pie")}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  chartType === "pie"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+              >
+                Pie
+              </button>
             </div>
           </div>
+          <StatsChart stats={stats} type={chartType} />
+        </motion.div>
+
+        {/* Additional insights */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Top threats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6"
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Top Threats</h2>
+            <TopThreatsChart threats={stats.topThreats} />
+          </motion.div>
+
+          {/* Detection rate card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6"
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Detection Rate</h2>
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-base font-semibold text-gray-800">Phishing Detection</span>
+                  <span className="text-base font-bold text-gray-900">
+                    {((stats.phishingDetected / stats.totalScans) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(stats.phishingDetected / stats.totalScans) * 100}%` }}
+                    transition={{ delay: 0.8, duration: 1 }}
+                    className="bg-red-500 h-4 rounded-full"
+                  ></motion.div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-base font-semibold text-gray-800">Safe URLs</span>
+                  <span className="text-base font-bold text-gray-900">
+                    {((stats.safeUrls / stats.totalScans) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(stats.safeUrls / stats.totalScans) * 100}%` }}
+                    transition={{ delay: 0.9, duration: 1 }}
+                    className="bg-green-500 h-4 rounded-full"
+                  ></motion.div>
+                </div>
+              </div>
+              <div className="pt-4 border-t-2 border-gray-300">
+                <p className="text-base font-medium text-gray-700">
+                  Based on {stats.totalScans} total scans with an average confidence of{" "}
+                  {(stats.averageConfidence * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

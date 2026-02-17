@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+
+/**
+ * Middleware for Next.js 16+ (Updated pattern)
+ * Protects routes and enforces role-based access control
+ */
+export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+
+  // Get token using next-auth/jwt
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // Protected routes - require authentication
+  const protectedPaths = ["/dashboard", "/admin", "/tester"];
+  const isProtectedPath = protectedPaths.some((p) => path.startsWith(p));
+
+  if (isProtectedPath && !token) {
+    // Redirect to login if not authenticated
+    const url = new URL("/login", req.url);
+    url.searchParams.set("callbackUrl", path);
+    return NextResponse.redirect(url);
+  }
+
+  // Admin-only routes
+  if (path.startsWith("/admin")) {
+    if (token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+  }
+
+  // Tester and Admin routes
+  if (path.startsWith("/tester")) {
+    if (token?.role !== "tester" && token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - api routes (except protected ones)
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico, sitemap.xml, robots.txt (public files)
+     */
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
+};

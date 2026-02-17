@@ -167,6 +167,8 @@ export default function SetupFileManager() {
           <button
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
+            aria-label={uploading ? "Uploading setup file" : "Upload setup file"}
+            aria-busy={uploading}
             className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all ${
               !selectedFile || uploading
                 ? "bg-gray-400 cursor-not-allowed"

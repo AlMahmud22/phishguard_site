@@ -84,6 +84,7 @@ const UserSchema = new Schema<IUser>(
     email: {
       type: String,
       required: [true, "Email is required"],
+      unique: true,
       lowercase: true,
       trim: true,
       match: [
@@ -207,8 +208,7 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// indexes for lookups
-UserSchema.index({ email: 1 }, { unique: true });
+// Compound index for OAuth lookups
 UserSchema.index({ provider: 1, providerId: 1 });
 
 const User: Model<IUser> =

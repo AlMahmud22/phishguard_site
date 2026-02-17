@@ -1,80 +1,236 @@
 /* 
  * PhishGuard Web Dashboard - Global Styles
- * 
- * Note: The @tailwind, @apply, and @layer directives are valid Tailwind CSS syntax.
- * VS Code's CSS linter may show warnings, but these are processed correctly by PostCSS
- * during the build process. You can safely ignore CSS validation warnings for this file.
+ * Modern UI with glassmorphism and 3D effects
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global custom CSS variables for light and dark mode */
+/* Modern color-focused theme */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 15, 23, 42;
-    --background-end-rgb: 15, 23, 42;
-  }
+  --foreground-rgb: 30, 41, 59;
+  --background-start-rgb: 240, 249, 255;
+  --background-end-rgb: 224, 242, 254;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --accent: #a855f7;
+  --surface: #f8fafc;
+  --dark: #1e293b;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  letter-spacing: -0.01em;
+  min-height: 100vh;
 }
 
-/* Smooth scrolling for the entire page */
+/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom utility classes for PhishGuard - using Tailwind's @layer and @apply directives */
+/* Performance optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove unnecessary transforms and filters for better performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom utility classes - modern glass morphism design */
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors;
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-2.5 rounded-lg font-medium 
+    hover:from-primary-600 hover:to-primary-700 transition-all duration-300 
+    shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-primary-600/60
+    hover:scale-105 active:scale-95;
   }
   
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors;
+    @apply bg-blue-600 text-white px-6 py-2.5 rounded-lg 
+    font-medium hover:bg-blue-700 transition-all duration-300 
+    shadow-lg shadow-blue-500/50 hover:shadow-xl;
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
-  }
-}
-
-/* Custom animations for modern effects */
-@layer utilities {
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    @apply bg-white/80 backdrop-blur-xl rounded-2xl border border-primary-200 p-6
+    shadow-xl hover:shadow-2xl hover:shadow-primary-500/20 transition-all duration-300
+    hover:border-primary-400 hover:-translate-y-1;
   }
   
-  .delay-1000 {
-    animation-delay: 1s;
+  .card-elevated {
+    @apply bg-white/90 backdrop-blur-xl rounded-2xl border border-primary-300 p-6
+    shadow-2xl hover:shadow-primary-500/40 transition-all duration-300;
+  }
+
+  .glass {
+    @apply bg-white/60 backdrop-blur-2xl border border-primary-200
+    shadow-lg;
+  }
+
+  .glass-card {
+    @apply bg-white/50 backdrop-blur-2xl rounded-2xl border border-primary-200
+    shadow-2xl hover:bg-white/70 hover:border-primary-400 transition-all duration-300;
+  }
+
+  .glow-effect {
+    @apply shadow-lg shadow-primary-500/30 hover:shadow-2xl hover:shadow-primary-600/50 transition-shadow duration-300;
   }
 }
 
-/* Smooth gradient animation */
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
+/* Enhanced animations */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
   }
-  50% {
-    background-position: 100% 50%;
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
   }
-  100% {
-    background-position: 0% 50%;
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 via-blue-500 to-blue-600 bg-clip-text text-transparent;
+  }
+
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700;
+  }
+
+  .bg-gradient-accent {
+    @apply bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  /* 3D Typography Effects */
+  .text-3d {
+    text-shadow: 
+      1px 1px 0 rgba(59, 130, 246, 0.8),
+      2px 2px 0 rgba(59, 130, 246, 0.7),
+      3px 3px 0 rgba(59, 130, 246, 0.6),
+      4px 4px 0 rgba(59, 130, 246, 0.5),
+      5px 5px 0 rgba(59, 130, 246, 0.4),
+      6px 6px 10px rgba(0, 0, 0, 0.3);
+    transform: rotateX(-5deg) rotateY(0deg);
+  }
+
+  .text-3d-dark {
+    text-shadow: 
+      1px 1px 0 rgba(30, 41, 59, 0.8),
+      2px 2px 0 rgba(30, 41, 59, 0.7),
+      3px 3px 0 rgba(30, 41, 59, 0.6),
+      4px 4px 0 rgba(30, 41, 59, 0.5),
+      5px 5px 0 rgba(30, 41, 59, 0.4),
+      6px 6px 10px rgba(0, 0, 0, 0.4);
+  }
+
+  .text-tilt-left {
+    transform: perspective(500px) rotateY(-15deg);
+    transform-style: preserve-3d;
+  }
+
+  .text-tilt-right {
+    transform: perspective(500px) rotateY(15deg);
+    transform-style: preserve-3d;
+  }
+
+  .text-tilt-up {
+    transform: perspective(500px) rotateX(-10deg);
+    transform-style: preserve-3d;
+  }
+
+  .text-pop-out {
+    transform: perspective(800px) translateZ(50px);
+    transform-style: preserve-3d;
+  }
+
+  .text-extrude {
+    text-shadow:
+      0 1px 0 #2563eb,
+      0 2px 0 #1e40af,
+      0 3px 0 #1e3a8a,
+      0 4px 0 #1e3a8a,
+      0 5px 0 #172554,
+      0 6px 1px rgba(0,0,0,.1),
+      0 0 5px rgba(0,0,0,.1),
+      0 1px 3px rgba(0,0,0,.3),
+      0 3px 5px rgba(0,0,0,.2),
+      0 5px 10px rgba(0,0,0,.25);
+  }
+
+  .section-tilt {
+    transform: perspective(2000px) rotateX(2deg);
+    transform-style: preserve-3d;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+  border-radius: 10px;
+  border: 2px solid rgba(241, 245, 249, 0.8);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2563eb, #7c3aed);
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: #1e293b;
+}
+
+::-moz-selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: #1e293b;
+}
+
+/* Keyframes for complex animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

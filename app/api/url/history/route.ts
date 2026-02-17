@@ -39,6 +39,12 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = { userId: user._id };
+    
+    console.log('History Query Debug:');
+    console.log('- Auth User ID:', authUser.id);
+    console.log('- User._id:', user._id);
+    console.log('- User._id type:', typeof user._id);
+    console.log('- Query:', JSON.stringify(query));
 
     if (status && ["safe", "warning", "danger"].includes(status)) {
       query.status = status;

@@ -165,11 +165,11 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -178,24 +178,24 @@ export default function DashboardLayout({
       <aside
         className={`
           fixed lg:relative left-0 top-0 lg:top-0 bottom-0 z-40 lg:z-10
-          w-64 bg-slate-900/95 border-r border-slate-700/50 h-screen lg:h-screen overflow-hidden
+          w-64 bg-white border-r border-gray-200 h-screen lg:h-screen overflow-hidden
           transform transition-transform duration-300 ease-in-out lg:transform-none shadow-xl lg:shadow-none
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Sidebar header */}
-          <div className="p-6 border-b border-slate-700/50 flex-shrink-0">
+          <div className="p-6 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">P</span>
               </div>
-              <h2 className="text-lg font-bold text-white">PhishGuard</h2>
+              <h2 className="text-lg font-bold text-gray-900">PhishGuard</h2>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -211,8 +211,8 @@ export default function DashboardLayout({
                   transition-colors duration-150
                   ${
                     isActive(item.href)
-                      ? "bg-primary-600 text-white"
-                      : "text-gray-300 hover:bg-slate-800 hover:text-white"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }
                 `}
               >
@@ -227,11 +227,11 @@ export default function DashboardLayout({
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-screen w-full lg:w-auto">
         {/* Top bar */}
-        <header className="bg-slate-900/95 border-b border-slate-700/50 sticky top-0 z-50 backdrop-blur-sm">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
           <div className="px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

@@ -41,7 +41,13 @@ export default function ForgotPasswordPage() {
         <div className="max-w-md w-full">
           <div className="card">
             <div className="text-center">
-              <div className="mb-4 text-6xl">📧</div>
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/50">
+                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
                 Check Your Email
               </h1>

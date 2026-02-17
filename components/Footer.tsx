@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-/// Ultra-modern footer component with animations
+/// Modern footer with light blue/white gradient theme
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -29,13 +29,13 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative bg-gradient-to-br from-slate-950 via-primary-950 to-slate-950 text-white mt-auto overflow-hidden">
-      {/* Animated Background Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:50px_50px] opacity-50"></div>
+    <footer className="relative bg-gradient-to-br from-white via-blue-50 to-white text-gray-800 mt-auto overflow-hidden border-t border-blue-100">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px] opacity-50"></div>
       
-      {/* Floating Orbs - CSS Only */}
-      <div className="absolute top-10 right-10 w-64 h-64 bg-primary-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-      <div className="absolute bottom-10 left-10 w-64 h-64 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" style={{ animationDelay: '1s', animationDuration: '3s' }}></div>
+      {/* Floating Orbs */}
+      <div className="absolute top-10 right-10 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-10 left-10 w-64 h-64 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s', animationDuration: '3s' }}></div>
 
       <div className="relative container mx-auto px-4 py-16 z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -47,19 +47,16 @@ export default function Footer() {
             transition={{ duration: 0.6 }}
           >
             <div className="flex items-center gap-3 mb-6">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-              </motion.div>
-              <h3 className="text-2xl font-black bg-gradient-to-r from-primary-400 to-cyan-400 bg-clip-text text-transparent">
+              </div>
+              <h3 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 {process.env.NEXT_PUBLIC_APP_NAME || "PhishGuard"}
               </h3>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-sm leading-relaxed mb-6">
               Next-generation phishing detection system powered by AI. 
               Protecting users from malicious URLs and cyber threats with 
               advanced machine learning algorithms.
@@ -73,7 +70,7 @@ export default function Footer() {
                   href={social.href}
                   whileHover={{ scale: 1.2, rotate: 360 }}
                   whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-xl border border-white/20 hover:bg-white/20 hover:border-primary-400 transition-all"
+                  className="w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-blue-600 border border-blue-100 hover:bg-blue-50 hover:border-blue-300 transition-all"
                   title={social.name}
                 >
                   {social.icon}
@@ -89,8 +86,8 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-gray-900">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
               Quick Links
@@ -107,14 +104,14 @@ export default function Footer() {
                 >
                   <Link
                     href={link.href}
-                    className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm group"
+                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm group"
                   >
-                    <span className="group-hover:scale-110 transition-transform">
+                    <span className="group-hover:scale-110 transition-transform text-blue-500">
                       {link.icon}
                     </span>
                     {link.name}
                     <motion.span
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600"
                       animate={{ x: [0, 3, 0] }}
                       transition={{ duration: 1, repeat: Infinity }}
                     >
@@ -133,8 +130,8 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-gray-900">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
               Key Features
@@ -147,11 +144,11 @@ export default function Footer() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-3 text-gray-400 text-sm"
+                  className="flex items-center gap-3 text-gray-600 text-sm"
                 >
                   <motion.div
                     whileHover={{ scale: 1.3, rotate: 360 }}
-                    className="w-8 h-8 bg-gradient-to-br from-primary-500 to-cyan-500 rounded-lg flex items-center justify-center text-white"
+                    className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-500/30"
                   >
                     {feature.icon}
                   </motion.div>
@@ -168,25 +165,25 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-gray-900">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               Stay Updated
             </h3>
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               Get the latest updates on phishing threats and security tips.
             </p>
             <div className="space-y-3">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="w-full px-4 py-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-primary-400 transition-all text-sm"
+                className="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm shadow-sm"
               />
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full px-4 py-3 bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl font-bold text-sm hover:from-primary-700 hover:to-cyan-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-sm hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 flex items-center justify-center gap-2"
               >
                 <span>Subscribe</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,9 +206,9 @@ export default function Footer() {
                   viewport={{ once: true }}
                   transition={{ delay: 0.4 + index * 0.05 }}
                   whileHover={{ scale: 1.05 }}
-                  className="px-3 py-1 bg-white/10 backdrop-blur-xl rounded-full text-xs border border-white/20 text-gray-300 flex items-center gap-1.5"
+                  className="px-3 py-1 bg-white rounded-full text-xs border border-blue-200 text-gray-700 flex items-center gap-1.5 shadow-sm"
                 >
-                  {badge.icon}
+                  <span className="text-blue-600">{badge.icon}</span>
                   {badge.text}
                 </motion.div>
               ))}
@@ -225,7 +222,7 @@ export default function Footer() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="border-t border-white/10 pt-8"
+          className="border-t border-blue-200 pt-8"
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <motion.p
@@ -233,7 +230,7 @@ export default function Footer() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
-              className="text-gray-400 text-sm text-center md:text-left flex items-center justify-center md:justify-start gap-1.5"
+              className="text-gray-600 text-sm text-center md:text-left flex items-center justify-center md:justify-start gap-1.5"
             >
               <span>© {currentYear} PhishGuard. All rights reserved.</span>
             </motion.p>
@@ -243,14 +240,14 @@ export default function Footer() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.6 }}
-              className="flex gap-6 text-sm text-gray-400"
+              className="flex gap-6 text-sm text-gray-600"
             >
               {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((item, index) => (
                 <motion.a
                   key={index}
                   href="#"
-                  whileHover={{ scale: 1.05, color: "#ffffff" }}
-                  className="hover:text-white transition-colors"
+                  whileHover={{ scale: 1.05, color: "#3b82f6" }}
+                  className="hover:text-blue-600 transition-colors"
                 >
                   {item}
                 </motion.a>
@@ -266,16 +263,20 @@ export default function Footer() {
             transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
             className="mt-6 text-center"
           >
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-xl rounded-full border border-white/10">
-              <span className="text-sm text-gray-400">
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-full border border-blue-200 shadow-md">
+              <span className="text-sm text-gray-700">
                 Protecting the internet, one URL at a time
               </span>
-              <motion.span
+              <motion.svg
+                className="w-6 h-6 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               >
-                🛡️
-              </motion.span>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </motion.svg>
             </div>
           </motion.div>
         </motion.div>
@@ -289,7 +290,7 @@ export default function Footer() {
         whileHover={{ scale: 1.1, y: -5 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-primary-600 to-cyan-600 rounded-full shadow-2xl flex items-center justify-center text-white text-2xl hover:shadow-primary-500/50 transition-all z-50"
+        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full shadow-2xl flex items-center justify-center text-white text-2xl hover:shadow-blue-500/50 transition-all z-50"
         title="Scroll to top"
       >
         <motion.span

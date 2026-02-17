@@ -6,6 +6,7 @@ import dbConnect from "@/lib/db";
 import User, { IUser } from "@/lib/models/User";
 import { ErrorResponses } from "@/lib/apiResponse";
 import bcrypt from 'bcryptjs';
+import { logger } from "@/lib/logger";
 
 /**
  * JWT Authentication Middleware
@@ -77,7 +78,7 @@ async function authenticateWithDesktopKey(
       }
     }
   } catch (error) {
-    console.error('Desktop key authentication error:', error);
+    logger.error('Desktop key authentication error', error);
   }
   
   return { user: null };

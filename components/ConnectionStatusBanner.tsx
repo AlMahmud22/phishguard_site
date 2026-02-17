@@ -83,6 +83,7 @@ export default function ConnectionStatusBanner() {
         </div>
         <button
           onClick={() => setDismissed(true)}
+          aria-label="Dismiss connection error banner"
           className="ml-3 flex-shrink-0 text-red-400 hover:text-red-600"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -76,6 +76,7 @@ export default function DeleteAccountSection({ userProvider, userEmail }: Delete
           <button
             type="button"
             onClick={() => setShowModal(true)}
+            aria-label="Open delete account confirmation dialog"
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
             Delete My Account
@@ -141,6 +142,7 @@ export default function DeleteAccountSection({ userProvider, userEmail }: Delete
                   setConfirmText("");
                   setError("");
                 }}
+                aria-label="Cancel account deletion"
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 disabled={isDeleting}
               >
@@ -148,6 +150,8 @@ export default function DeleteAccountSection({ userProvider, userEmail }: Delete
               </button>
               <button
                 onClick={handleDeleteAccount}
+                aria-label={isDeleting ? "Deleting account" : "Confirm account deletion"}
+                aria-busy={isDeleting}
                 className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
                 disabled={isDeleting}
               >

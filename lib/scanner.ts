@@ -2,6 +2,7 @@ import https from "https";
 import http from "http";
 import { URL } from "url";
 import dns from "dns/promises";
+import { API_TIMEOUTS, SCORE_THRESHOLDS, ENGINE_NAMES } from "./constants";
 
 /**
  * URL Scanner Utility
@@ -344,7 +345,7 @@ export async function checkThreatDatabases(
           headers: {
             "x-apikey": process.env.VIRUSTOTAL_API_KEY,
           },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(API_TIMEOUTS.VIRUSTOTAL),
         }
       );
 
@@ -479,7 +480,7 @@ export async function checkThreatDatabases(
                 "Content-Type": "application/x-www-form-urlencoded",
               },
               body: `url=${encodeURIComponent(url)}`,
-              signal: AbortSignal.timeout(5000),
+              signal: AbortSignal.timeout(API_TIMEOUTS.VIRUSTOTAL),
             }
           );
           
@@ -526,7 +527,7 @@ export async function checkThreatDatabases(
             url: url,
             visibility: "unlisted",
           }),
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(API_TIMEOUTS.URLSCAN_SUBMIT),
         }
       );
 
@@ -559,7 +560,7 @@ export async function checkThreatDatabases(
                 headers: {
                   "API-Key": process.env.URLSCAN_API_KEY,
                 },
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(API_TIMEOUTS.URLSCAN_RESULT),
               }
             );
             
@@ -1113,11 +1114,11 @@ export async function scanUrl(
       ? Math.round((localScore * 0.4 + cloudScore * 0.6))
       : cloudScore;
 
-  // Determine status
+  // Determine status based on score thresholds
   let status: "safe" | "warning" | "danger";
-  if (combinedScore >= 70) {
+  if (combinedScore >= SCORE_THRESHOLDS.DANGER) {
     status = "danger";
-  } else if (combinedScore >= 40) {
+  } else if (combinedScore >= SCORE_THRESHOLDS.WARNING) {
     status = "warning";
   } else {
     status = "safe";

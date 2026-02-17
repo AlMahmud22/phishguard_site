@@ -52,7 +52,9 @@ export default function EmailTestPanel() {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-3xl">📧</span>
+        <svg className="w-10 h-10 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Email System Test</h2>
           <p className="text-gray-600 text-sm">Verify SMTP configuration and send test emails</p>
@@ -170,7 +172,7 @@ export default function EmailTestPanel() {
 
       <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <p className="text-sm text-blue-800">
-          <strong>💡 Tip:</strong> For production, consider using SendGrid, AWS SES, or Mailgun for better deliverability and higher sending limits.
+          <strong className="inline-flex items-center gap-1"><svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 016 6v3.586l.707.707A1 1 0 0116 14H4a1 1 0 01-.707-1.707L4 11.586V8a6 6 0 016-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg> Tip:</strong> For production, consider using SendGrid, AWS SES, or Mailgun for better deliverability and higher sending limits.
         </p>
       </div>
     </div>

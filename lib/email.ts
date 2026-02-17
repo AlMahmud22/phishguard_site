@@ -1,4 +1,5 @@
 import * as nodemailer from 'nodemailer';
+import { logger } from './logger';
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -28,7 +29,7 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions): Prom
   try {
     // Check if email is configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.warn('Email service not configured. Email not sent:', subject);
+      logger.warn(`Email service not configured. Email not sent: ${subject}`);
       return false;
     }
 
@@ -40,10 +41,10 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions): Prom
       text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
     });
 
-    console.log(`Email sent successfully to ${to}`);
+    logger.info(`Email sent successfully to ${to}`);
     return true;
   } catch (error) {
-    console.error('Failed to send email:', error);
+    logger.error('Failed to send email', error);
     return false;
   }
 }
@@ -704,17 +705,17 @@ export async function sendTestEmail(email: string): Promise<boolean> {
 export async function verifyEmailConfiguration(): Promise<boolean> {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.warn('⚠️ Email service not configured - EMAIL_USER or EMAIL_PASSWORD missing');
+      logger.warn('Email service not configured - EMAIL_USER or EMAIL_PASSWORD missing');
       return false;
     }
 
     // Verify SMTP connection
     await transporter.verify();
-    console.log('✅ Email service configured and ready');
+    logger.info('Email service configured and ready');
     return true;
   } catch (error) {
-    console.error('❌ Email configuration error:', error);
-    console.warn('⚠️ Email features will not work until configuration is fixed');
+    logger.error('Email configuration error', error);
+    logger.warn('Email features will not work until configuration is fixed');
     return false;
   }
 }
