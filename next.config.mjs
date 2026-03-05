@@ -1,11 +1,10 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
-  
+
   poweredByHeader: false, // remove X-Powered-By header for security
   compress: true, // enable gzip compression
-  
+
   // Security headers
   async headers() {
     return [
@@ -14,31 +13,31 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            value: 'on',
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            value: 'SAMEORIGIN',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '1; mode=block',
           },
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
           },
           {
             key: 'Content-Security-Policy',
@@ -54,14 +53,14 @@ const nextConfig: NextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'self'",
-              "upgrade-insecure-requests"
-            ].join('; ')
-          }
+              "upgrade-insecure-requests",
+            ].join('; '),
+          },
         ],
       },
     ];
   },
-  
+
   // env vars accessible to browser (NEXT_PUBLIC_ prefix auto-exposed)
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -71,7 +70,7 @@ const nextConfig: NextConfig = {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
   },
-  
+
   // image optimization config
   images: {
     remotePatterns: [
@@ -92,18 +91,20 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  
+
   // compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production" ? {
-      exclude: ['error', 'warn'], // keep error and warn logs
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? { exclude: ['error', 'warn'] }
+        : false,
   },
-  
-  // experimental features
+
+  // experimental features (Next.js 14 supported)
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['recharts', 'axios', 'framer-motion'],
+    instrumentationHook: true,
   },
 };
 
