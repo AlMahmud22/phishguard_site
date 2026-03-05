@@ -1,6 +1,6 @@
 // PM2 Ecosystem Config — PhishGuard
 // Usage: pm2 start pm2.config.js
-module.exports = {
+export default {
   apps: [
     {
       name: 'phishguard',
