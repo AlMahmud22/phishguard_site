@@ -117,9 +117,9 @@ fi
 
 # ── Done ──────────────────────────────────────────────────────
 echo ""
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}  ✓ Deployment complete${NC}"
+echo -e "${GREEN}============================================${NC}"
+echo -e "${GREEN}  Deployment complete${NC}"
 echo -e "${GREEN}  Commit : $(git rev-parse --short HEAD)${NC}"
 echo -e "${GREEN}  Port   : $PORT${NC}"
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}============================================${NC}"
 pm2 list
