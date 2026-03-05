@@ -54,16 +54,15 @@ NODE_VER=$(node -v | cut -d'.' -f1 | tr -d 'v')
 [ "$NODE_VER" -ge 18 ] || fail "Node.js 18+ required, found $(node -v)"
 ok "Node $(node -v), npm $(npm -v)"
 
-# ── 3. Install dependencies ───────────────────────────────────
-log "Installing dependencies..."
-npm install --legacy-peer-deps --omit=dev 2>&1 | tail -5
+# ── 3. Install dependencies (all incl. dev — needed for build) ───
+log "Installing all dependencies (including devDependencies for build)..."
+npm ci --legacy-peer-deps 2>&1 | tail -5
 ok "Dependencies installed"
 
 # ── 4. Run security audit ─────────────────────────────────────
 log "Running security audit..."
-AUDIT=$(npm audit --omit=dev 2>&1 || true)
+AUDIT=$(npm audit 2>&1 || true)
 CRITICAL=$(echo "$AUDIT" | grep -c "critical" || true)
-HIGH=$(echo "$AUDIT" | grep -c "high" || true)
 if [ "$CRITICAL" -gt 0 ]; then
   warn "Audit: $CRITICAL critical issue(s) found — check 'npm audit' after deploy"
 else
@@ -87,6 +86,11 @@ log "Building Next.js production bundle..."
 rm -rf .next
 NODE_ENV=production npm run build
 ok "Build complete"
+
+# ── 6b. Prune dev dependencies after build ────────────────────
+log "Pruning devDependencies to save memory..."
+npm prune --omit=dev --legacy-peer-deps 2>&1 | tail -3
+ok "Dev dependencies removed"
 
 # ── 7. PM2 start / restart ───────────────────────────────────
 log "Managing PM2 process..."

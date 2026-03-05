@@ -58,7 +58,6 @@
     "@types/react-dom": "^18.3.7",
     "@types/validator": "^13.15.10",
     "autoprefixer": "^10.4.21",
-    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.35",
     "postcss": "^8.5.3",
