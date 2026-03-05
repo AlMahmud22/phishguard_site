@@ -58,7 +58,6 @@ const SessionSchema = new Schema<ISession>(
       type: Date,
       default: Date.now,
       required: true,
-      index: true,
     },
     isActive: {
       type: Boolean,

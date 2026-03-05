@@ -37,7 +37,6 @@ const OneTimeCodeSchema = new Schema<IOneTimeCode>({
   expiresAt: {
     type: Date,
     required: true,
-    index: true,
   },
   consumed: {
     type: Boolean,

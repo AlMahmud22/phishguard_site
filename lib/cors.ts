@@ -12,9 +12,10 @@ export function corsMiddleware(request: NextRequest) {
   const allowedOrigins = [
     "http://localhost:3456",
     "http://127.0.0.1:3456",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-  ];
+    "http://localhost:3005",
+    "http://127.0.0.1:3005",
+    process.env.NEXT_PUBLIC_SITE_URL,
+  ].filter(Boolean) as string[];
 
   if (origin && allowedOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
@@ -40,9 +41,10 @@ export function handleCorsOptions(request: NextRequest) {
   const allowedOrigins = [
     "http://localhost:3456",
     "http://127.0.0.1:3456",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-  ];
+    "http://localhost:3005",
+    "http://127.0.0.1:3005",
+    process.env.NEXT_PUBLIC_SITE_URL,
+  ].filter(Boolean) as string[];
 
   if (origin && allowedOrigins.includes(origin)) {
     return new NextResponse(null, {
