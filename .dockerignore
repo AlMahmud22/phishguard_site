@@ -1,0 +1,59 @@
+# ── Node / npm ────────────────────────────────────────────────
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Next.js build artefacts ───────────────────────────────────
+.next
+out
+build
+dist
+
+# ── Environment / secrets ─────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# .env.example is intentionally NOT excluded (kept as reference)
+
+# ── Git ───────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── TypeScript cache ──────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ── Logs & temp files ─────────────────────────────────────────
+logs/
+*.log
+.cache/
+tmp/
+temp/
+
+# ── IDE / OS artefacts ────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Testing ───────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── CI / deployment scripts (not needed inside container) ─────
+deploy-production.sh
+pm2.config.js
+
+# ── Documentation ─────────────────────────────────────────────
+README.md
+docs/
+
+# ── Public uploads (mount as volume in production) ────────────
+# public/uploads/

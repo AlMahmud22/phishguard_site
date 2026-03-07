@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@phish.equators.tech';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3005';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 interface EmailOptions {
   to: string;

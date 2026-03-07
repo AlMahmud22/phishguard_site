@@ -4,8 +4,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
+# Note: package-lock.json is intentionally tracked for reproducible Nixpacks builds
 
 # Next.js build output
 .next/

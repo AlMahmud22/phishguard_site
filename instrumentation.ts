@@ -31,6 +31,6 @@ export async function register() {
     const { startHealthMonitoring } = await import('./lib/healthMonitor');
     startHealthMonitoring(5); // Check every 5 minutes
     
-    console.log('🌐 Starting Next.js development server...\n');
+    console.log('[PhishGuard] Server initialisation complete.');
   }
 }
