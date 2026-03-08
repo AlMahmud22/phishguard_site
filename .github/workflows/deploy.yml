@@ -1,25 +1,22 @@
-deploy-server:
-  name: Deploy to Server
-  runs-on: ubuntu-latest
-  needs: build
-  if: github.ref == 'refs/heads/main'
+name: Deploy to Droplet
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches: [ main ]
 
-    - name: Setup SSH key
-      uses: webfactory/ssh-agent@v0.8.1
-      with:
-        ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-    - name: Run deploy script on server
-      uses: appleboy/ssh-action@v0.1.7
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: 22
-        script: |
-          cd /var/www/html/phish.equators.tech
-          ./deploy.sh
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 188.166.227.65
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/html/mahmud/phishguard
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart phishguard
