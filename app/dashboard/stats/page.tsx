@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { fetchUserStats } from "@/lib/api";
 import type { UserStats, ApiResponse } from "@/types";
@@ -12,7 +12,7 @@ import ParticlesBackground from "@/components/backgrounds/ParticlesBackground";
 
 /// dynamically import chart components with lazy loading for better performance
 /// these components use Recharts library which is heavy, so lazy loading improves initial page load
-const StatsChart = dynamic(() => import("@/components/StatsChart"), {
+const StatsChart = nextDynamic(() => import("@/components/StatsChart"), {
   loading: () => (
     <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6">
       <div className="animate-pulse">
@@ -23,7 +23,7 @@ const StatsChart = dynamic(() => import("@/components/StatsChart"), {
   ssr: false, /// disable SSR for chart components as they use client-side rendering
 });
 
-const TopThreatsChart = dynamic(
+const TopThreatsChart = nextDynamic(
   () =>
     import("@/components/StatsChart").then((mod) => ({
       default: mod.TopThreatsChart,
@@ -42,6 +42,8 @@ const TopThreatsChart = dynamic(
 
 /// Statistics page displays visual analytics using Recharts
 /// fetches data from GET /api/user/stats endpoint
+export const dynamic = 'force-dynamic'
+
 export default function StatsPage() {
   const router = useRouter();
   const [stats, setStats] = useState<UserStats | null>(null);

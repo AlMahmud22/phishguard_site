@@ -4,6 +4,8 @@ import RoleGuard from "@/components/RoleGuard";
 import AdminUsersTable from "@/components/AdminUsersTable";
 
 /// Admin Users page - displays and manages all users
+export const dynamic = 'force-dynamic'
+
 export default function AdminUsersPage() {
   return (
     <RoleGuard allowedRoles={["admin", "tester"]}>

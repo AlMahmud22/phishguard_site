@@ -4,6 +4,8 @@ import RoleGuard from "@/components/RoleGuard";
 import RateLimitDisplay from "@/components/RateLimitDisplay";
 
 /// Admin Rate Limit page - displays rate limiting statistics
+export const dynamic = 'force-dynamic'
+
 export default function AdminRateLimitPage() {
   return (
     <RoleGuard allowedRoles={["admin", "tester"]}>

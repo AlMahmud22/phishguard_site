@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { TIME_PERIODS, type TimePeriod } from "@/lib/constants";
 import { StatsQuerySchema, parseQuery } from "@/lib/validation";

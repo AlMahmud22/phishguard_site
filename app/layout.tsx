@@ -5,6 +5,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 
+// Ensure root layout is always dynamically rendered (required for Coolify/self-hosted)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const montserrat = Montserrat({ 
   subsets: ["latin"],
   variable: '--font-montserrat',

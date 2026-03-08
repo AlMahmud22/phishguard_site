@@ -10,6 +10,8 @@ import type { UserSettings, ApiResponse } from "@/types";
 
 /// Settings page for user preferences and configuration
 /// fetches from GET /api/user/settings and updates with PUT /api/user/settings
+export const dynamic = 'force-dynamic'
+
 export default function SettingsPage() {
   const router = useRouter();
   const { data: session } = useSession();

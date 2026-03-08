@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { fetchScanHistory } from "@/lib/api";
 import type { ScanHistory, ApiResponse } from "@/types";
 import ParticlesBackground from "@/components/backgrounds/ParticlesBackground";
 
 /// dynamically import components with lazy loading for better performance
-const HistoryTable = dynamic(() => import("@/components/HistoryTable"), {
+const HistoryTable = nextDynamic(() => import("@/components/HistoryTable"), {
   loading: () => (
     <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-6">
       <div className="animate-pulse space-y-4">
@@ -25,6 +25,8 @@ const HistoryTable = dynamic(() => import("@/components/HistoryTable"), {
 
 /// History page displays all user scan records from backend
 /// fetches data from GET /api/url/history endpoint
+export const dynamic = 'force-dynamic'
+
 export default function HistoryPage() {
   const router = useRouter();
   const [history, setHistory] = useState<ScanHistory[]>([]);

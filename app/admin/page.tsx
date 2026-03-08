@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import AdminUsersTable from "@/components/AdminUsersTable";
 import AdminLogsTable from "@/components/AdminLogsTable";
 import EmailTestPanel from "@/components/EmailTestPanel";
 import SetupFileManager from "@/components/SetupFileManager";
 
-const FloatingShapes = dynamic(() => import("@/components/three/FloatingShapes"), { ssr: false });
+const FloatingShapes = nextDynamic(() => import("@/components/three/FloatingShapes"), { ssr: false });
+
+export const dynamic = 'force-dynamic'
 
 export default function AdminPage() {
   const { data: session, status } = useSession();

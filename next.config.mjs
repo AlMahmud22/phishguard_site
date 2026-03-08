@@ -25,6 +25,9 @@ if (siteHostname && !imageRemotePatterns.some((p) => p.hostname === siteHostname
 }
 
 const nextConfig = {
+  // Essential for self-hosting (Coolify, Docker, etc.)
+  output: 'standalone',
+
   reactStrictMode: true,
 
   poweredByHeader: false,

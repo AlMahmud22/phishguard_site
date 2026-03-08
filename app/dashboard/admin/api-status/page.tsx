@@ -4,6 +4,8 @@ import RoleGuard from "@/components/RoleGuard";
 import ApiStatusDashboard from "@/components/ApiStatusDashboard";
 
 /// Admin API Status page - displays real-time status of all APIs
+export const dynamic = 'force-dynamic'
+
 export default function ApiStatusPage() {
   return (
     <RoleGuard allowedRoles={["admin", "tester"]}>

@@ -4,6 +4,8 @@ import RoleGuard from "@/components/RoleGuard";
 import ActivityDashboard from "@/components/ActivityDashboard";
 
 /// Admin Activity page - displays real-time activity metrics
+export const dynamic = 'force-dynamic'
+
 export default function AdminActivityPage() {
   return (
     <RoleGuard allowedRoles={["admin", "tester"]}>

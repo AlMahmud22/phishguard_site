@@ -4,6 +4,8 @@ import RoleGuard from "@/components/RoleGuard";
 import DesktopSessionsTable from "@/components/DesktopSessionsTable";
 
 /// Admin Desktop Sessions page - displays connected desktop applications
+export const dynamic = 'force-dynamic'
+
 export default function DesktopSessionsPage() {
   return (
     <RoleGuard allowedRoles={["admin", "tester"]}>

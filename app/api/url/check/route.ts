@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import validator from "validator";
 import { RATE_LIMITS, INPUT_LIMITS, SCAN_CONTEXTS } from "@/lib/constants";

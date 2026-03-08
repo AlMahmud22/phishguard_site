@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { fetchUserStats } from "@/lib/api";
 import type { UserStats, ApiResponse } from "@/types";
 import URLScanCard from "@/components/URLScanCard";
@@ -12,13 +12,15 @@ import StatsOverview from "@/components/StatsOverview";
 import ParticlesBackground from "@/components/backgrounds/ParticlesBackground";
 
 // Dynamically import Three.js components to avoid SSR issues
-const AnimatedIcon = dynamic(
+const AnimatedIcon = nextDynamic(
   () => import("@/components/three/AnimatedIcon"),
   { ssr: false }
 );
 
 /// Dashboard page - main user interface after authentication
 /// displays scan history, analytics, and user information
+export const dynamic = 'force-dynamic'
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [statsData, setStatsData] = useState<any>(null);
