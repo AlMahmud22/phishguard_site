@@ -11,7 +11,7 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: 188.166.227.65
+          host: 157.230.35.215
           username: root
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
