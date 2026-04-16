@@ -3,7 +3,7 @@
 set -e
 
 echo "🚀 Deploying PhishGuard..."
-cd /var/www/html/mahmud/phishguard
+cd /var/www/html/phishguard_site
 
 npm install
 npm run build
