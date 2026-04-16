@@ -1,6 +1,5 @@
 # PhishGuard Web Dashboard
 ////////////
-> **Final Year Project - PSM 2 Demo 1 (40%)**  
 > Advanced phishing detection system web interface
 
 ---
@@ -220,20 +219,6 @@ Detailed documentation for each development unit:
 
 - **Desktop App**: `psm1_phishguard` (Electron + React)
 - **Backend API**: `phish.equators.site` (REST API)
-
----
-
-## 👥 Development Team
-
-**Project**: Final Year Project  
-**Phase**: PSM 2 - Demo 1 (40%)  
-**Institution**: [Your Institution Name]
-
----
-
-## 📝 License
-
-This project is part of a final year academic project.
 
 ---
 
