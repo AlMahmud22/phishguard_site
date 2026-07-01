@@ -1,5 +1,5 @@
 # PhishGuard Web Dashboard
-////////////
+/////////
 > Advanced phishing detection system web interface
 
 ---
